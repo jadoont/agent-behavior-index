@@ -1,0 +1,81 @@
+name: Record agent run
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: Agent to run
+        type: choice
+        options: [claude, codex, grok, none]
+        default: claude
+      task:
+        description: Task ID (directory under tasks/)
+        type: choice
+        options: [c0, t1, t2]
+        default: c0
+      run_index:
+        description: Replicate index (for n per cell)
+        type: string
+        default: "1"
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      TASK_DIR: tasks/${{ inputs.task }}
+      RUN_TAG: ${{ inputs.agent }}-${{ inputs.task }}-r${{ inputs.run_index }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Garnet Runtime Review
+        id: garnet
+        uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c # v2.2.0
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+          debug: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install agent CLI
+        run: bash scripts/install_agent.sh "${{ inputs.agent }}"
+
+      - name: Agent workload
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: bash scripts/run_agent.sh "${{ inputs.agent }}" "$TASK_DIR" "runs/$RUN_TAG"
+
+      - name: Task check
+        if: always()
+        run: bash "$TASK_DIR/check.sh" | tee "runs/$RUN_TAG/check.txt"
+
+      - name: Record run metadata
+        if: always()
+        run: |
+          mkdir -p "runs/$RUN_TAG"
+          cat > "runs/$RUN_TAG/meta.json" <<EOF
+          {
+            "agent": "${{ inputs.agent }}",
+            "task": "${{ inputs.task }}",
+            "run_index": ${{ inputs.run_index }},
+            "gh_run_id": "${{ github.run_id }}",
+            "commit": "${{ github.sha }}",
+            "garnet_report_url": "${{ steps.garnet.outputs.report_url }}"
+          }
+          EOF
+          cat "runs/$RUN_TAG/meta.json"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: run-${{ env.RUN_TAG }}-${{ github.run_id }}
+          path: runs/${{ env.RUN_TAG }}

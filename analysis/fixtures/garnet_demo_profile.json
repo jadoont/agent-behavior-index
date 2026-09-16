@@ -1,0 +1,481 @@
+{
+    "profiles": [
+        {
+            "schema_version": "runtime-review-public/v3",
+            "timestamp": "2026-08-01T00:16:24.391230009Z",
+            "run": {
+                "profile_id": "019fbaad-dda5-71c3-a8e5-3a4cd96fea21",
+                "run_id": "30675075813",
+                "repository": "garnet-labs/garnet-runtime-review-demo",
+                "workflow": "Garnet Record (install under sensor)",
+                "job": "record",
+                "commit_sha": "c2b619ef4a5c9864dd2d311c1264ede790c47a31"
+            },
+            "associations": [
+                {
+                    "remote_address": "104.16.4.34",
+                    "remote_names": [
+                        "registry.npmjs.org"
+                    ],
+                    "remote_ports": [
+                        "443 (https)"
+                    ],
+                    "protocol": "TCP",
+                    "lineage_recorded": true,
+                    "pid": 2687,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "bash",
+                        "node"
+                    ],
+                    "github_step": "1. Install dependencies (the workload)",
+                    "flow_id": 0
+                },
+                {
+                    "remote_address": "127.0.0.53",
+                    "remote_names": [
+                        "localhost"
+                    ],
+                    "remote_ports": [
+                        "53 (dns)"
+                    ],
+                    "protocol": "UDP",
+                    "lineage_recorded": true,
+                    "pid": 2651,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "node"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 1
+                },
+                {
+                    "remote_address": "127.0.0.53",
+                    "remote_names": [
+                        "localhost"
+                    ],
+                    "remote_ports": [
+                        "53 (dns)"
+                    ],
+                    "protocol": "UDP",
+                    "lineage_recorded": true,
+                    "pid": 2699,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "bash",
+                        "node",
+                        "dash",
+                        "node"
+                    ],
+                    "github_step": "1. Install dependencies (the workload)",
+                    "flow_id": 1
+                },
+                {
+                    "remote_address": "127.0.0.53",
+                    "remote_names": [
+                        "localhost"
+                    ],
+                    "remote_ports": [
+                        "53 (dns)"
+                    ],
+                    "protocol": "UDP",
+                    "lineage_recorded": true,
+                    "pid": 2687,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "bash",
+                        "node"
+                    ],
+                    "github_step": "1. Install dependencies (the workload)",
+                    "flow_id": 1
+                },
+                {
+                    "remote_address": "127.0.0.53",
+                    "remote_names": [
+                        "localhost"
+                    ],
+                    "remote_ports": [
+                        "53 (dns)"
+                    ],
+                    "protocol": "UDP",
+                    "lineage_recorded": true,
+                    "pid": 2171,
+                    "process": "hosted-compute-agent",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 1
+                },
+                {
+                    "remote_address": "127.0.0.53",
+                    "remote_names": [
+                        "localhost"
+                    ],
+                    "remote_ports": [
+                        "53 (dns)"
+                    ],
+                    "protocol": "UDP",
+                    "lineage_recorded": true,
+                    "pid": 2186,
+                    "process": "provjobd376502869",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "sudo",
+                        "provjobd376502869"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 1
+                },
+                {
+                    "remote_address": "140.82.114.4",
+                    "remote_names": [
+                        "github.com"
+                    ],
+                    "remote_ports": [
+                        "443 (https)"
+                    ],
+                    "protocol": "TCP",
+                    "lineage_recorded": true,
+                    "pid": 2651,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "node"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 2
+                },
+                {
+                    "remote_address": "140.82.114.6",
+                    "remote_names": [
+                        "api.github.com"
+                    ],
+                    "remote_ports": [
+                        "443 (https)"
+                    ],
+                    "protocol": "TCP",
+                    "lineage_recorded": true,
+                    "pid": 2651,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "node"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 3
+                },
+                {
+                    "remote_address": "185.199.110.133",
+                    "remote_names": [
+                        "release-assets.githubusercontent.com"
+                    ],
+                    "remote_ports": [
+                        "443 (https)"
+                    ],
+                    "protocol": "TCP",
+                    "lineage_recorded": true,
+                    "pid": 2651,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "node"
+                    ],
+                    "github_step": "99. Runner Processes",
+                    "flow_id": 4
+                },
+                {
+                    "remote_address": "44.213.24.151",
+                    "remote_names": [
+                        "httpbin.org"
+                    ],
+                    "remote_ports": [
+                        "443 (https)"
+                    ],
+                    "protocol": "TCP",
+                    "lineage_recorded": true,
+                    "pid": 2699,
+                    "process": "node",
+                    "ancestry": [
+                        "systemd",
+                        "hosted-compute-agent",
+                        "Runner.Listener",
+                        "Runner.Worker",
+                        "bash",
+                        "node",
+                        "dash",
+                        "node"
+                    ],
+                    "github_step": "1. Install dependencies (the workload)",
+                    "flow_id": 5
+                }
+            ]
+        }
+    ],
+    "count": 1,
+    "profile": {
+        "schema_version": "runtime-review-public/v3",
+        "timestamp": "2026-08-01T00:16:24.391230009Z",
+        "run": {
+            "profile_id": "019fbaad-dda5-71c3-a8e5-3a4cd96fea21",
+            "run_id": "30675075813",
+            "repository": "garnet-labs/garnet-runtime-review-demo",
+            "workflow": "Garnet Record (install under sensor)",
+            "job": "record",
+            "commit_sha": "c2b619ef4a5c9864dd2d311c1264ede790c47a31"
+        },
+        "associations": [
+            {
+                "remote_address": "104.16.4.34",
+                "remote_names": [
+                    "registry.npmjs.org"
+                ],
+                "remote_ports": [
+                    "443 (https)"
+                ],
+                "protocol": "TCP",
+                "lineage_recorded": true,
+                "pid": 2687,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "bash",
+                    "node"
+                ],
+                "github_step": "1. Install dependencies (the workload)",
+                "flow_id": 0
+            },
+            {
+                "remote_address": "127.0.0.53",
+                "remote_names": [
+                    "localhost"
+                ],
+                "remote_ports": [
+                    "53 (dns)"
+                ],
+                "protocol": "UDP",
+                "lineage_recorded": true,
+                "pid": 2651,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "node"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 1
+            },
+            {
+                "remote_address": "127.0.0.53",
+                "remote_names": [
+                    "localhost"
+                ],
+                "remote_ports": [
+                    "53 (dns)"
+                ],
+                "protocol": "UDP",
+                "lineage_recorded": true,
+                "pid": 2699,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "bash",
+                    "node",
+                    "dash",
+                    "node"
+                ],
+                "github_step": "1. Install dependencies (the workload)",
+                "flow_id": 1
+            },
+            {
+                "remote_address": "127.0.0.53",
+                "remote_names": [
+                    "localhost"
+                ],
+                "remote_ports": [
+                    "53 (dns)"
+                ],
+                "protocol": "UDP",
+                "lineage_recorded": true,
+                "pid": 2687,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "bash",
+                    "node"
+                ],
+                "github_step": "1. Install dependencies (the workload)",
+                "flow_id": 1
+            },
+            {
+                "remote_address": "127.0.0.53",
+                "remote_names": [
+                    "localhost"
+                ],
+                "remote_ports": [
+                    "53 (dns)"
+                ],
+                "protocol": "UDP",
+                "lineage_recorded": true,
+                "pid": 2171,
+                "process": "hosted-compute-agent",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 1
+            },
+            {
+                "remote_address": "127.0.0.53",
+                "remote_names": [
+                    "localhost"
+                ],
+                "remote_ports": [
+                    "53 (dns)"
+                ],
+                "protocol": "UDP",
+                "lineage_recorded": true,
+                "pid": 2186,
+                "process": "provjobd376502869",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "sudo",
+                    "provjobd376502869"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 1
+            },
+            {
+                "remote_address": "140.82.114.4",
+                "remote_names": [
+                    "github.com"
+                ],
+                "remote_ports": [
+                    "443 (https)"
+                ],
+                "protocol": "TCP",
+                "lineage_recorded": true,
+                "pid": 2651,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "node"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 2
+            },
+            {
+                "remote_address": "140.82.114.6",
+                "remote_names": [
+                    "api.github.com"
+                ],
+                "remote_ports": [
+                    "443 (https)"
+                ],
+                "protocol": "TCP",
+                "lineage_recorded": true,
+                "pid": 2651,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "node"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 3
+            },
+            {
+                "remote_address": "185.199.110.133",
+                "remote_names": [
+                    "release-assets.githubusercontent.com"
+                ],
+                "remote_ports": [
+                    "443 (https)"
+                ],
+                "protocol": "TCP",
+                "lineage_recorded": true,
+                "pid": 2651,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "node"
+                ],
+                "github_step": "99. Runner Processes",
+                "flow_id": 4
+            },
+            {
+                "remote_address": "44.213.24.151",
+                "remote_names": [
+                    "httpbin.org"
+                ],
+                "remote_ports": [
+                    "443 (https)"
+                ],
+                "protocol": "TCP",
+                "lineage_recorded": true,
+                "pid": 2699,
+                "process": "node",
+                "ancestry": [
+                    "systemd",
+                    "hosted-compute-agent",
+                    "Runner.Listener",
+                    "Runner.Worker",
+                    "bash",
+                    "node",
+                    "dash",
+                    "node"
+                ],
+                "github_step": "1. Install dependencies (the workload)",
+                "flow_id": 5
+            }
+        ]
+    }
+}
