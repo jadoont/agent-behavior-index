@@ -46,13 +46,8 @@ jobs:
           echo "run_index=$run_index" >> "$GITHUB_OUTPUT"
           echo "tag=$agent-$task-r$run_index" >> "$GITHUB_OUTPUT"
 
-      - name: Garnet Runtime Review
-        id: garnet
-        uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c # v2.2.0
-        with:
-          api_token: ${{ secrets.GARNET_API_TOKEN }}
-          debug: true
-
+      # Harness setup runs before the sensor attaches so observed edges belong to the
+      # agent workload and task check, not to toolchain installs.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -63,6 +58,13 @@ jobs:
 
       - name: Install agent CLI
         run: bash scripts/install_agent.sh "${{ steps.cell.outputs.agent }}"
+
+      - name: Garnet Runtime Review
+        id: garnet
+        uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c # v2.2.0
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+          debug: true
 
       - name: Agent workload
         env:
@@ -92,6 +94,9 @@ jobs:
             --arg commit "${{ github.sha }}" \
             --arg garnet_report_url "${{ steps.garnet.outputs.report_url }}" \
             '$ARGS.named' | tee "runs/${{ steps.cell.outputs.tag }}/meta.json"
+          sleep 5  # let the sensor flush flows from the last step
+          sudo cp /var/log/jibril.out "runs/${{ steps.cell.outputs.tag }}/jibril.out" || echo "no raw sensor log"
+          sudo chown "$(id -u)" "runs/${{ steps.cell.outputs.tag }}/jibril.out" || true
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -23,7 +23,9 @@ scripts/                       agent install + headless invocation
 analysis/profile.py            Garnet JSON -> filtered edge set (the only place filters live)
 analysis/selfreport.py         transcript -> reported destinations
 analysis/metrics.py            the three metrics + over-reporting audit + paired differences
+analysis/jibril.py             raw sensor events (debug artifact) -> same edge set, no public API needed
 analysis/score.py              CLI: python -m analysis.score runs/*/
+docs/pilot-tasks.md            per-task prompt, expected process tree, allowed hosts, deviation rules
 ```
 
 ## Running
@@ -35,8 +37,15 @@ python -m analysis.score runs/*/
 python -m pytest analysis
 ```
 
+Each run artifact contains `prompt.txt`, `transcript.jsonl`, `agent.diff`, `check.txt`,
+`meta.json`, and `jibril.out` (raw sensor events with process ancestry and per-connection
+flags). `score.py` reads `jibril.out` when present and falls back to a public profile.
+
 Requires repo secrets `GARNET_API_TOKEN` and the key for whichever agent is being run
-(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`).
+(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`). Keys are received only via a
+password manager or DM and go straight into Actions secrets; they never appear in files,
+commits, prompts, or canary payloads. Secret scanning and push protection are enabled on
+the repo.
 
 ## Reading the numbers honestly
 
