@@ -13,11 +13,11 @@ jobs:
     # Paid inference is opt-in, same-repository, trusted-author and never a bot.
     # Ordinary Dependabot PRs still get tokenless Garnet capture in test.yml.
     if: >-
-      !github.event.pull_request.draft &&
+      ${{ !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot' &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) &&
-      contains(github.event.pull_request.labels.*.name, 'abi:run')
+      contains(github.event.pull_request.labels.*.name, 'abi:run') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
