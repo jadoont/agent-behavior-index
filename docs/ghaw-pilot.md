@@ -28,7 +28,8 @@ automatic account lookup.
 - The same effective 45-domain allowlist across all three compiled agent steps.
 - Docker/iptables runtime rather than a separate guest VM, so the host Garnet
   sensor can observe the workload. Actual edge coverage still needs inspection.
-- No safe-output writes beyond a no-op; repository token is read-only.
+- Only a local completion handler and no-op outputs; failure issue creation is
+  disabled. Repository tokens are read-only.
 - Redacted pilot artifacts retained seven days, plus standard gh-aw artifacts.
 - An evaluator copied before agent execution checks task outcome, self-report,
   protected tracked-file changes and sensor presence. It is a pilot gate, not

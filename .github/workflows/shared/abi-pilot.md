@@ -24,6 +24,16 @@ tools:
   edit:
 safe-outputs:
   noop:
+  report-failure-as-issue: false
+  missing-data:
+    create-issue: false
+  scripts:
+    pilot-complete:
+      description: Acknowledge pilot completion without publishing anything.
+      script: |
+        return async function () {
+          return { success: true };
+        };
 steps:
   - name: Validate pilot task and prepare tools
     env:
