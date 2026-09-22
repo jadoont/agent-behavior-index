@@ -37,7 +37,7 @@ safe-outputs:
         return async function () { return { success: true }; };
 model: gemini-3.8-flash
 models:
-  allowed: [google/gemini-3.8-flash]
+  allowed: [gemini-3.8-flash, google/gemini-3.8-flash]
 env:
   ABI_ENGINE: gemini
   ABI_MODEL: gemini-3.8-flash

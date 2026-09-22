@@ -32,7 +32,9 @@ for engine, model in MODELS.items():
         if "apiProxy" not in config:
             return match[0]
         proxy = config["apiProxy"]
-        proxy["allowedModels"] = [model]
+        # Native provider requests use bare IDs; the canonical form is retained
+        # for proxy versions that normalize names before applying the policy.
+        proxy["allowedModels"] = [model.split("/", 1)[1], model]
         proxy["modelFallback"] = {"enabled": False}
         proxy["enableTokenSteering"] = False
         assert proxy["maxAiCredits"] in (10, 50)

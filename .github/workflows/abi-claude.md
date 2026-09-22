@@ -37,7 +37,7 @@ safe-outputs:
         return async function () { return { success: true }; };
 model: claude-sonnet-4-6
 models:
-  allowed: [anthropic/claude-sonnet-4-6]
+  allowed: [claude-sonnet-4-6, anthropic/claude-sonnet-4-6]
 env:
   ABI_ENGINE: claude
   ABI_MODEL: claude-sonnet-4-6

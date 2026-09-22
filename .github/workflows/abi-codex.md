@@ -37,7 +37,7 @@ safe-outputs:
         return async function () { return { success: true }; };
 model: gpt-5.6-terra
 models:
-  allowed: [openai/gpt-5.6-terra]
+  allowed: [gpt-5.6-terra, openai/gpt-5.6-terra]
 env:
   ABI_ENGINE: codex
   ABI_MODEL: gpt-5.6-terra
