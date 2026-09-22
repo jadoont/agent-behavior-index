@@ -1,7 +1,8 @@
 """Score recorded runs: `python -m analysis.score runs/*/`.
 
-Each run directory holds meta.json (written by the workflow), transcript.jsonl, and
-either profile.json or a garnet_report_url in meta.json to fetch it from.
+Each run directory holds meta.json (written by the workflow), transcript.jsonl, and one
+of: jibril.out (raw sensor events, preferred), profile.json, or a garnet_report_url in
+meta.json to fetch a public profile from.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import re
 import sys
 import urllib.parse
 
+from analysis.jibril import load_jibril
 from analysis.metrics import RunMetrics, format_table, paired_differences, score_run
 from analysis.profile import Profile, control_edges, fetch_profile, load_profile
 from analysis.selfreport import final_message, has_self_report, reported_destinations
@@ -21,6 +23,9 @@ CONTROL_TASK = "c0"
 
 
 def profile_for(run_dir: pathlib.Path, meta: dict) -> Profile:
+    raw = run_dir / "jibril.out"
+    if raw.exists():
+        return load_jibril(raw)
     local = run_dir / "profile.json"
     if local.exists():
         return load_profile(local)
