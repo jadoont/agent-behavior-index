@@ -24,12 +24,15 @@ automatic account lookup.
 
 - gh-aw compiler v0.88.8 with pinned actions and containers.
 - Per-agent 12-minute execution timeout, 20-turn configured bound, 50 AI-credit
-  proxy bound. These are not provider dollar caps or key expiry controls.
+  proxy bound, and 100 AI-credit daily workflow guardrail. These are not provider
+  dollar caps or key expiry controls.
 - The same effective 45-domain allowlist across all three compiled agent steps.
 - Docker/iptables runtime rather than a separate guest VM, so the host Garnet
   sensor can observe the workload. Actual edge coverage still needs inspection.
 - Only a local completion handler and no-op outputs; failure issue creation is
-  disabled. Repository tokens are read-only.
+  disabled. Agent tokens are read-only. Only gh-aw's conclusion job receives
+  `actions: write` to maintain its daily-usage cache; no job receives issue,
+  pull-request or repository-content write permission.
 - Redacted pilot artifacts retained seven days, plus standard gh-aw artifacts.
 - An evaluator copied before agent execution checks task outcome, self-report,
   protected tracked-file changes and sensor presence. It is a pilot gate, not
