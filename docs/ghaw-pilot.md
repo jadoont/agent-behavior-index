@@ -8,7 +8,7 @@ establish a baseline from a single replicate.
 
 ```sh
 gh workflow run record.yml --repo jadoont/agent-behavior-index \
-  --ref abi/ghaw-pilot -f agent=all -f task=c0
+  --ref main -f agent=claude -f task=c0
 ```
 
 Use `task=t2` only after the control demonstrates working authentication and
@@ -77,9 +77,19 @@ Provider-side project name: `abi-sprint`. Intended expiry: 30 days after creatio
 Enforced spending caps and expiries must be verified at each provider separately;
 the workflow does not create or enforce those account settings.
 
-At initial preparation, Claude billing was paused, OpenAI access was limited to
-the Personal organization, and Gemini project creation was rejected by Google's
-anti-abuse check. Do not interpret a dispatched workflow as proof these were fixed.
+Claude billing is enabled for the `abi-sprint` workspace in Garnet labs. The
+workspace limit is $50/month, auto-reload is off, and the September 22 key expires
+October 22, 2026. Only the explicitly approved $25 credit purchase was made.
+The repository's `ANTHROPIC_API_KEY` is an encrypted Actions secret, not a file.
+OpenAI access was limited to the Personal organization, and Gemini project
+creation was rejected by Google's anti-abuse check. Both arms remain paused;
+do not interpret their committed configuration as successful validation.
+
+The raw parser now retains gh-aw's container-rooted `awf-cmd-*.sh` workload
+subtree while excluding sibling harness containers. This post-live correction
+is recorded in `PLAN.md`; earlier outputs require reprocessing. The
+`scripts/summarize_pilot.py` diagnostic inventories all raw chains without
+pretending that a shared proxy connection identifies a particular client.
 
 ## Garnet candidate and Dependabot
 

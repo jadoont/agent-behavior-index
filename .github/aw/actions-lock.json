@@ -5,6 +5,11 @@
       "version": "v4",
       "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02"
     },
+    "garnet-org/action@249153cfd535f8a08c328c1ef71eeb4b1b9ac096": {
+      "repo": "garnet-org/action",
+      "version": "249153cfd535f8a08c328c1ef71eeb4b1b9ac096",
+      "sha": "249153cfd535f8a08c328c1ef71eeb4b1b9ac096"
+    },
     "garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c": {
       "repo": "garnet-org/action",
       "version": "3d47f4a9004f7356c980a0e8d420ef5984750e3c",

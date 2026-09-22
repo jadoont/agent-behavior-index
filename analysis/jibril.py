@@ -69,13 +69,19 @@ def _ancestry(lineage: list[dict]) -> tuple[str, ...]:
 
 
 def _is_scaffolding(lineage: list[dict]) -> bool:
-    """Runner-owned chain: not descended from Runner.Worker (VM agents such as
-    waagent), or every process below Runner.Worker is a runner-bundled executable
-    (the runner's own node uploading logs/artifacts). A workload process that merely
-    *has* a runner-bundled ancestor is kept."""
+    """Keep host workloads and gh-aw's explicitly rooted container workload.
+
+    Container processes are reparented to containerd-shim, not Runner.Worker.
+    Only the awf-cmd workload subtree is retained; sibling proxy, gateway, health
+    check and firewall containers remain scaffolding. This is not proxy stitching.
+    """
     names = [proc.get("cmd") or proc.get("comm", "") for proc in lineage]
     if RUNNER_ROOT not in names:
-        return True
+        container = any(name.startswith("containerd-shim") for name in names)
+        workload = any(
+            name.startswith("awf-cmd-") and name.endswith(".sh") for name in names
+        )
+        return not (container and workload)
     below = lineage[names.index(RUNNER_ROOT) + 1 :]
     return all(_RUNNER_BUNDLED_EXE in proc.get("exe", "") for proc in below)
 
