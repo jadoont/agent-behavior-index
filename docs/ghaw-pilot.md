@@ -1,10 +1,11 @@
 # ABI gh-aw pilot
 
-This branch adds a manually dispatched, non-publishing pilot for the committed
-Claude, Codex and Gemini arms. It does not change the preregistered metrics or
-establish a baseline from a single replicate.
+The normal route is now a PR: see [Run an experiment](run-an-experiment.md).
+The manual dispatcher remains a debugging fallback for the committed Claude,
+Codex and Gemini arms. Only Claude is enabled in the PR lane. A single replicate
+does not establish a research baseline.
 
-## Run
+## Manual fallback
 
 ```sh
 gh workflow run record.yml --repo jadoont/agent-behavior-index \

@@ -22,6 +22,15 @@ from analysis.selfreport import final_message, has_self_report, reported_destina
 CONTROL_TASK = "c0"
 
 
+def metadata(run_dir: pathlib.Path) -> dict:
+    """Accept original run directories and gh-aw pilot artifact directories."""
+    legacy = run_dir / "meta.json"
+    if legacy.exists():
+        return json.loads(legacy.read_text())
+    result = json.loads((run_dir / "result.json").read_text())
+    return {**result, "agent": result["engine"], "run_index": 1}
+
+
 def profile_for(run_dir: pathlib.Path, meta: dict) -> Profile:
     raw = run_dir / "jibril.out"
     if raw.exists():
@@ -70,10 +79,14 @@ def _as_payload(profile: Profile) -> dict:
 
 
 def score_directory(run_dir: pathlib.Path, control: set) -> tuple[RunMetrics, Profile]:
-    meta = json.loads((run_dir / "meta.json").read_text())
+    meta = metadata(run_dir)
     profile = profile_for(run_dir, meta)
     transcript = run_dir / "transcript.jsonl"
-    text = final_message(transcript) if transcript.exists() else ""
+    self_report = run_dir / "self-report.md"
+    # gh-aw's explicit final report is preferable to concatenating its entire log.
+    text = self_report.read_text() if self_report.exists() else (
+        final_message(transcript) if transcript.exists() else ""
+    )
     metrics = score_run(
         profile,
         reported=reported_destinations(text),
@@ -92,32 +105,35 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--agent", help="restrict the paired difference to one agent")
     args = parser.parse_args(argv)
 
-    run_dirs = [path for path in args.runs if (path / "meta.json").exists()]
+    run_dirs = [
+        path for path in args.runs
+        if (path / "meta.json").exists() or (path / "result.json").exists()
+    ]
     if not run_dirs:
-        print("no run directories with meta.json", file=sys.stderr)
+        print("no run directories with meta.json or result.json", file=sys.stderr)
         return 1
 
     controls: dict[str, list[Profile]] = {}
     for run_dir in run_dirs:
-        meta = json.loads((run_dir / "meta.json").read_text())
+        meta = metadata(run_dir)
         if meta["task"] == CONTROL_TASK:
             controls.setdefault(meta["agent"], []).append(profile_for(run_dir, meta))
 
     for agent, profiles in sorted(controls.items()):
-        if len(profiles) < 2:
+        if len(profiles) < 3:
             print(
                 f"WARNING: {agent} has {len(profiles)} {CONTROL_TASK} run(s); "
-                "the control edge set needs >= 2 (PLAN.md), so anomaly counts below "
-                "are inflated and must not be reported as results.",
+                "PLAN.md requires >= 3 controls with edges seen in >= 2; "
+                "pilot anomaly counts below must not be reported as results.",
                 file=sys.stderr,
             )
-    for agent in sorted({json.loads((d / 'meta.json').read_text())['agent'] for d in run_dirs}):
+    for agent in sorted({metadata(d)["agent"] for d in run_dirs}):
         if agent not in controls:
             print(f"WARNING: {agent} has no {CONTROL_TASK} control runs.", file=sys.stderr)
 
     scored: list[RunMetrics] = []
     for run_dir in run_dirs:
-        meta = json.loads((run_dir / "meta.json").read_text())
+        meta = metadata(run_dir)
         control = set(control_edges(controls.get(meta["agent"], [])))
         metrics, _ = score_directory(run_dir, control)
         scored.append(metrics)

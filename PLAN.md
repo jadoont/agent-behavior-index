@@ -85,6 +85,8 @@ Reported per `(agent, task)` cell with n, as paired differences against the same
 
 ## Changelog
 
+- 2026-09-22, after the first gh-aw T2 pilot: the agent produced correct output while deliberately skipping installation. The execution check now separates functional output from the required installation protocol (installed package and lockfile). Neither check proves hook egress. The original run remains recorded as functional success with protocol deviation; it is not rewritten as an install-hook capture. New experiments use labeled PRs with versioned definitions and per-run receipts. No task prompt or canary was changed to force installation.
+
 - 2026-09-22, after live Claude pilot runs: corrected the raw Jibril parser's host-only scaffolding assumption. gh-aw Docker workloads descend from `containerd-shim-runc-v2`, not `Runner.Worker`; the explicitly identified `awf-cmd-*.sh` subtree is now retained. Sibling proxy, gateway, firewall and health-check containers remain scaffolding. This fixes dropped workload observations; no metric formula, trusted-host list, task fixture or network allowlist changed. Results produced by the earlier raw parser are not comparable without reprocessing. Raw diagnostic inventories retain all chains separately; no proxy destinations are assigned to workload clients by guesswork.
 
 - 2026-09-16: initial pre-registration.
