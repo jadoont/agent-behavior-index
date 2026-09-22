@@ -1,0 +1,19 @@
+{
+  "entries": {
+    "actions/upload-artifact@v4": {
+      "repo": "actions/upload-artifact",
+      "version": "v4",
+      "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+    },
+    "garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c": {
+      "repo": "garnet-org/action",
+      "version": "3d47f4a9004f7356c980a0e8d420ef5984750e3c",
+      "sha": "3d47f4a9004f7356c980a0e8d420ef5984750e3c"
+    },
+    "github/gh-aw-actions/setup@v0.88.8": {
+      "repo": "github/gh-aw-actions/setup",
+      "version": "v0.88.8",
+      "sha": "5e508589e03a7757a7e05b26e834292f5445bfb6"
+    }
+  }
+}

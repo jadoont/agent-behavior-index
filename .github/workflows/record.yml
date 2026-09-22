@@ -1,105 +1,45 @@
 name: Record agent run
-
-# Two triggers on purpose: manual dispatch for a human, and a push to runs/trigger.json
-# so a run can be started by committing the cell to record (agent, task, replicate).
+run-name: "ABI gh-aw pilot: ${{ inputs.agent }} / ${{ inputs.task }}"
 on:
   workflow_dispatch:
     inputs:
       agent:
-        description: Agent to run
         type: choice
-        options: [claude, codex, grok, none]
-        default: claude
+        options: [all, claude, codex, gemini]
+        default: all
       task:
-        description: Task ID (directory under tasks/)
         type: choice
-        options: [c0, t1, t2]
+        options: [c0, t2]
         default: c0
-      run_index:
-        description: Replicate index (for n per cell)
-        type: string
-        default: "1"
-  push:
-    paths: [runs/trigger.json]
-
+permissions:
+  contents: read
+concurrency:
+  group: abi-ghaw-pilot
+  cancel-in-progress: false
 jobs:
-  record:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve run cell
-        id: cell
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            agent="${{ inputs.agent }}"; task="${{ inputs.task }}"; run_index="${{ inputs.run_index }}"
-          else
-            agent=$(jq -r .agent runs/trigger.json)
-            task=$(jq -r .task runs/trigger.json)
-            run_index=$(jq -r .run_index runs/trigger.json)
-          fi
-          echo "agent=$agent" >> "$GITHUB_OUTPUT"
-          echo "task=$task" >> "$GITHUB_OUTPUT"
-          echo "run_index=$run_index" >> "$GITHUB_OUTPUT"
-          echo "tag=$agent-$task-r$run_index" >> "$GITHUB_OUTPUT"
-
-      # Harness setup runs before the sensor attaches so observed edges belong to the
-      # agent workload and task check, not to toolchain installs.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pytest
-
-      - name: Install agent CLI
-        run: bash scripts/install_agent.sh "${{ steps.cell.outputs.agent }}"
-
-      - name: Garnet Runtime Review
-        id: garnet
-        uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c # v2.2.0
-        with:
-          api_token: ${{ secrets.GARNET_API_TOKEN }}
-          debug: true
-
-      - name: Agent workload
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-        run: |
-          bash scripts/run_agent.sh "${{ steps.cell.outputs.agent }}" \
-            "tasks/${{ steps.cell.outputs.task }}" "runs/${{ steps.cell.outputs.tag }}"
-
-      - name: Task check
-        if: always()
-        run: |
-          mkdir -p "runs/${{ steps.cell.outputs.tag }}"
-          bash "tasks/${{ steps.cell.outputs.task }}/check.sh" \
-            | tee "runs/${{ steps.cell.outputs.tag }}/check.txt"
-
-      - name: Record run metadata
-        if: always()
-        run: |
-          mkdir -p "runs/${{ steps.cell.outputs.tag }}"
-          jq -n \
-            --arg agent "${{ steps.cell.outputs.agent }}" \
-            --arg task "${{ steps.cell.outputs.task }}" \
-            --argjson run_index "${{ steps.cell.outputs.run_index }}" \
-            --arg gh_run_id "${{ github.run_id }}" \
-            --arg commit "${{ github.sha }}" \
-            --arg garnet_report_url "${{ steps.garnet.outputs.report_url }}" \
-            '$ARGS.named' | tee "runs/${{ steps.cell.outputs.tag }}/meta.json"
-          sleep 5  # let the sensor flush flows from the last step
-          sudo cp /var/log/jibril.out "runs/${{ steps.cell.outputs.tag }}/jibril.out" || echo "no raw sensor log"
-          sudo chown "$(id -u)" "runs/${{ steps.cell.outputs.tag }}/jibril.out" || true
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: run-${{ steps.cell.outputs.tag }}-${{ github.run_id }}
-          path: runs/${{ steps.cell.outputs.tag }}
+  claude:
+    if: inputs.agent == 'all' || inputs.agent == 'claude'
+    uses: ./.github/workflows/abi-claude.lock.yml
+    with:
+      task: ${{ inputs.task }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GARNET_API_TOKEN: ${{ secrets.GARNET_API_TOKEN }}
+  codex:
+    needs: claude
+    if: always() && (inputs.agent == 'all' || inputs.agent == 'codex')
+    uses: ./.github/workflows/abi-codex.lock.yml
+    with:
+      task: ${{ inputs.task }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GARNET_API_TOKEN: ${{ secrets.GARNET_API_TOKEN }}
+  gemini:
+    needs: codex
+    if: always() && (inputs.agent == 'all' || inputs.agent == 'gemini')
+    uses: ./.github/workflows/abi-gemini.lock.yml
+    with:
+      task: ${{ inputs.task }}
+    secrets:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GARNET_API_TOKEN: ${{ secrets.GARNET_API_TOKEN }}
