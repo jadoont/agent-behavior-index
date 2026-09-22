@@ -34,6 +34,11 @@ Check [the official pin](https://garnet.ai/pins) before upgrading.
 6. Follow the [agent-consumption contract](https://docs.garnet.ai/consume).
    Missing, pending, stale, or incompatible evidence must be reported as
    unavailable for the current head, not as a clean execution.
+7. Push a documentation-only follow-up commit. Confirm that the existing
+   comment updates to the new commit and states what changed relative to the
+   previous recorded run. A second comment is not evidence of an in-place
+   update, and an unchanged workload does not guarantee identical network
+   observations on ephemeral runners.
 
 The Python dependency installation can legitimately reach PyPI and its
 distribution infrastructure. Read the process ancestry and step attribution;
