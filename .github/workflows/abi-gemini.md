@@ -9,10 +9,22 @@ on:
 engine: gemini
 permissions:
   contents: read
+  id-token: write
+sandbox:
+  agent:
+    runtime: docker-sudo-iptables
+    model-fallback: false
+    token-steering: false
 timeout-minutes: 12
 strict: true
 max-daily-ai-credits: 100
 safe-outputs:
+  threat-detection:
+    max-ai-credits: 10
+    engine:
+      id: gemini
+      model: gemini-3.8-flash
+      max-turns: 3
   report-failed-jobs: false
   report-failure-as-issue: false
   missing-tool: false
@@ -23,8 +35,12 @@ safe-outputs:
       description: Acknowledge completion without publishing.
       script: |
         return async function () { return { success: true }; };
+model: gemini-3.8-flash
+models:
+  allowed: [google/gemini-3.8-flash]
 env:
   ABI_ENGINE: gemini
+  ABI_MODEL: gemini-3.8-flash
 imports:
   - shared/abi-pilot.md
 ---

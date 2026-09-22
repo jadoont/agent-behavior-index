@@ -4,19 +4,27 @@ on:
   push:
     branches: [main]
   pull_request:
+    # Includes every Dependabot PR; no actor or path filter.
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
       - name: Garnet Runtime Review
-        uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c # v2.2.0
+        id: garnet
+        uses: garnet-org/action@249153cfd535f8a08c328c1ef71eeb4b1b9ac096 # v2.3.0 candidate, UNACCEPTED
         with:
-          api_token: ${{ secrets.GARNET_API_TOKEN }}
+          # Deliberately no api_token: exercise the OIDC exchange.
+          jibril_version: v2.17.0
+          debug: true
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

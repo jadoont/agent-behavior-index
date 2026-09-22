@@ -63,6 +63,7 @@ sensor_size = sensor_path.stat().st_size if sensor_path.exists() else 0
 transcript = Path("/tmp/gh-aw/agent-stdio.log")
 result = {
     "engine": os.environ.get("ABI_ENGINE"),
+    "configured_model": os.environ.get("ABI_MODEL"),
     "task": TASK,
     "github_run_id": os.environ.get("GITHUB_RUN_ID"),
     "commit": os.environ.get("GITHUB_SHA"),

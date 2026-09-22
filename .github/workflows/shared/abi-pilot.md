@@ -16,9 +16,6 @@ network:
     - api.openai.com
     - generativelanguage.googleapis.com
     - api.garnet.ai
-sandbox:
-  agent:
-    runtime: docker-sudo-iptables
 tools:
   bash: ["*"]
   edit:
@@ -44,9 +41,9 @@ steps:
 pre-agent-steps:
   - name: Garnet Runtime Review
     id: garnet
-    uses: garnet-org/action@3d47f4a9004f7356c980a0e8d420ef5984750e3c
+    uses: garnet-org/action@249153cfd535f8a08c328c1ef71eeb4b1b9ac096 # v2.3.0 candidate, UNACCEPTED
     with:
-      api_token: ${{ secrets.GARNET_API_TOKEN }}
+      jibril_version: v2.17.0
       debug: true
 post-steps:
   - name: Independently check task and collect redacted evidence

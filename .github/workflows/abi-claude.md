@@ -9,10 +9,22 @@ on:
 engine: claude
 permissions:
   contents: read
+  id-token: write
+sandbox:
+  agent:
+    runtime: docker-sudo-iptables
+    model-fallback: false
+    token-steering: false
 timeout-minutes: 12
 strict: true
 max-daily-ai-credits: 100
 safe-outputs:
+  threat-detection:
+    max-ai-credits: 10
+    engine:
+      id: claude
+      model: claude-sonnet-4-6
+      max-turns: 3
   report-failed-jobs: false
   report-failure-as-issue: false
   missing-tool: false
@@ -24,8 +36,11 @@ safe-outputs:
       script: |
         return async function () { return { success: true }; };
 model: claude-sonnet-4-6
+models:
+  allowed: [anthropic/claude-sonnet-4-6]
 env:
   ABI_ENGINE: claude
+  ABI_MODEL: claude-sonnet-4-6
 imports:
   - shared/abi-pilot.md
 ---

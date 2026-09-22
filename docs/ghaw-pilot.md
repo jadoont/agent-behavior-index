@@ -12,8 +12,8 @@ gh workflow run record.yml --repo jadoont/agent-behavior-index \
 ```
 
 Use `task=t2` only after the control demonstrates working authentication and
-workload evidence. Engines run serially. Each gets only its own inference secret
-and `GARNET_API_TOKEN`. No credentials are committed.
+workload evidence. Engines run serially. Each gets only its own inference secret.
+Garnet uses OIDC, not a repository token. No credentials are committed.
 
 Codex fails before inference unless `ABI_OPENAI_ORG_VERIFIED=garnet` is set as a
 repository variable. Set it only after replacing `OPENAI_API_KEY` with a verified
@@ -21,6 +21,31 @@ key from Garnet's `abi-sprint` project. This is an operator attestation, not an
 automatic account lookup.
 
 ## Bounds and evidence
+
+### Model policy
+
+Default to explicitly pinned, cost-effective models, with no automatic premium
+upgrade. Claude uses `claude-sonnet-4-6`; the paused Codex arm is configured for
+`gpt-5.6-terra`, and the paused Gemini arm for `gemini-3.8-flash`.
+OpenAI describes Terra as balanced for everyday coding and tool use
+(https://developers.openai.com/codex/models); Google describes Flash as
+cost-efficient for autonomous agents and software engineering
+(https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash).
+
+Each engine has an exact provider/model allowlist. Model fallback and token
+steering are disabled, so an unavailable model fails rather than silently
+upgrading to Fable, Astra, Opus, Pro, or another model. The threat detector is
+explicitly pinned to the same model with a separate 10 AI-credit, 3-turn bound.
+Premium-model exceptions require explicit approval and a reviewed configuration
+change. Codex and Gemini remain unverified until their account prerequisites are
+resolved; configuration is not a claim of successful inference.
+
+Compile with `python scripts/compile_ghaw.py`. gh-aw v0.88.8 does not propagate
+the model allowlist/fallback controls to its separate detector, so this wrapper
+also enforces them in both generated AWF JSON configurations. It fails if the
+expected two configurations per workflow are not found. Do not bypass the wrapper.
+
+### Execution bounds
 
 - gh-aw compiler v0.88.8 with pinned actions and containers.
 - Per-agent 12-minute execution timeout, 20-turn configured bound, 50 AI-credit
@@ -30,7 +55,8 @@ automatic account lookup.
 - Docker/iptables runtime rather than a separate guest VM, so the host Garnet
   sensor can observe the workload. Actual edge coverage still needs inspection.
 - Only a local completion handler and no-op outputs; failure issue creation is
-  disabled. Agent tokens are read-only. Only gh-aw's conclusion job receives
+  disabled. Agent repository access is read-only; `id-token: write` is granted
+  for Garnet authentication and excluded from the agent sandbox. Only gh-aw's conclusion job receives
   `actions: write` to maintain its daily-usage cache; no job receives issue,
   pull-request or repository-content write permission.
 - Redacted pilot artifacts retained seven days, plus standard gh-aw artifacts.
@@ -54,3 +80,21 @@ the workflow does not create or enforce those account settings.
 At initial preparation, Claude billing was paused, OpenAI access was limited to
 the Personal organization, and Gemini project creation was rejected by Google's
 anti-abuse check. Do not interpret a dispatched workflow as proof these were fixed.
+
+## Garnet candidate and Dependabot
+
+The user-requested quickstart pins the UNACCEPTED v2.3.0 candidate
+`249153cfd535f8a08c328c1ef71eeb4b1b9ac096`, with sensor `v2.17.0`:
+https://garnetlabs-devin-1787188255-docs-v6-10-alignment.mintlify.site/quickstart
+
+The pilot and standard `test.yml` both omit `api_token` and request
+`id-token: write`. The standard test workflow records before checkout and
+dependency installation, and handles every pull request, including Dependabot.
+It does not use `pull_request_target`, expose provider keys, or spend AI credits.
+The gh-aw workload capture starts at its pre-agent step, after host preparation.
+
+Dependabot coverage becomes active for future PRs once these workflow changes
+are merged. A real Dependabot-authored run is required to verify its OIDC behavior;
+a human PR or manual run is not equivalent. No Dependabot account secrets are
+required by this configuration, and missing recording must not be reported as a
+successful empty profile.
