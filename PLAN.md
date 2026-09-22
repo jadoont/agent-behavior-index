@@ -23,16 +23,17 @@ An **edge** is `(ancestry tuple, destination)` taken from `profile.associations[
 
 Ancestry is truncated at `Runner.Worker` so runner prefix noise does not create spurious edges.
 
+**Proxy stitching (contingent, pre-registered before any agent run).** Under gh-aw, agent egress is redirected through the harness's Squid proxy. If a workload edge terminates at the proxy, it is joined to the proxy's own outbound edge by connection identity where available, else nearest-in-time within a fixed window. The stitched edge = (workload chain, proxy's destination). Ambiguous joins (>= 2 candidate proxy connections in the window) are counted as unattributed and reported, never guessed. Stitching uses kernel events only, not the proxy's access log, so the destination never comes from a harness-controlled record.
+
 ## Arms
 
 | Agent | Invocation | Notes |
 | --- | --- | --- |
-| Claude Code | `claude -p` headless, JSON output | primary |
-| Codex CLI | `codex exec --full-auto` | |
-| Grok Build | xAI headless CLI | flags TBD on first run |
-| gh-aw control (one task only) | GitHub Agentic Workflows | tests whether harness boundary logs already capture what Garnet does |
+| Claude Code | gh-aw `engine: claude` | primary |
+| Codex CLI | gh-aw `engine: codex` | |
+| Gemini CLI | gh-aw `engine: gemini` | |
 
-Bare CLI on `ubuntu-latest` is the primary harness so egress is *not* firewalled by default — otherwise the behavior under study is suppressed.
+All arms run under GitHub Agentic Workflows on `ubuntu-latest`, sensor attached. The network allowlist is one committed config shared by every arm and task, must include every TRUSTED host, and is not edited after the first live run. Harness boundary logs (firewall, API proxy, MCP gateway) are kept as artifacts on every run.
 
 ## Task ladder
 
@@ -79,11 +80,11 @@ Reported per `(agent, task)` cell with n, as paired differences against the same
 2. C0 × Claude Code × 3 — control edge set stable.
 3. T1 × Claude Code × 2 — first coverage number.
 4. T2 × Claude Code × 2 — first headline-metric number.
-5. Repeat 2–4 for Codex. Grok Build if keys arrive.
-6. One T2 run under gh-aw.
-7. Writeup: results table first, numbered observations, then the null-result discussion.
+5. Repeat 2–4 for Codex, then Gemini.
+6. Writeup: results table first, numbered observations, then the null-result discussion.
 
 ## Changelog
 
 - 2026-09-16: initial pre-registration.
 - 2026-09-19: T2/T3 reworded to the credential-free canary that was already implemented (the original text said "with the runner token", which violated the no-credentials rule and was never built). Scaffolding-filter audit added. Sprint order gains the sensor gate and a Claude-only pilot. No metric definitions changed.
+- 2026-09-22: Before any agent run (only `agent=none` smoke runs exist). (1) Harness changed to gh-aw for all arms; bare-CLI primary and the one-task gh-aw control arm removed. (2) Grok Build dropped (no built-in gh-aw engine); Gemini CLI added as third arm. (3) Proxy stitching rule added to the unit of analysis. Consequences: egress is firewalled, so T4 exercises refusal directly and the allowlist is frozen alongside TRUSTED; harness boundary logs exist on every run and are compared to Garnet descriptively only — D_rep remains the agent's own self-report; gh-aw firewall/proxy/gateway processes are harness scaffolding, classified by ancestry like runner scaffolding. Pilot gate adds one check: on T2, record whether the `api.github.com` edge's ancestry reaches the postinstall process directly, terminates at the proxy (stitch), or is absent (canary blocked). No metric formulas changed.
