@@ -20,11 +20,12 @@ strict: true
 max-daily-ai-credits: 100
 safe-outputs:
   threat-detection:
-    max-ai-credits: 10
+    max-ai-credits: 50
+    continue-on-error: false
     engine:
       id: gemini
       model: gemini-3.8-flash
-      max-turns: 3
+      max-turns: 6
   report-failed-jobs: false
   report-failure-as-issue: false
   missing-tool: false

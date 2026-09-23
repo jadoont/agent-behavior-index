@@ -25,7 +25,7 @@ def test_compiled_model_policy_covers_agent_and_detection():
         text = (ROOT / ".github/workflows" / f"abi-{engine}.lock.yml").read_text()
         policies = configs(text)
         assert len(policies) == 2
-        for config, budget in zip(policies, (50, 10)):
+        for config, budget in zip(policies, (50, 50)):
             proxy = config["apiProxy"]
             assert proxy["allowedModels"] == [model.split("/", 1)[1], model]
             assert proxy["modelFallback"] == {"enabled": False}
@@ -37,6 +37,7 @@ def test_compiled_model_policy_covers_agent_and_detection():
         assert "jibril_version: v2.17.0" in text
         assert "--exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN" in text
         assert "--exclude-env ACTIONS_ID_TOKEN_REQUEST_URL" in text
+        assert 'GH_AW_DETECTION_CONTINUE_ON_ERROR: "false"' in text
     assert allowlists[0] == allowlists[1] == allowlists[2]
     assert len(allowlists[0]) == 45
 

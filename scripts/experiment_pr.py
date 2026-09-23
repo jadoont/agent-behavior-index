@@ -97,7 +97,12 @@ def receipt():
         "",
     ]
     if result:
-        body.append(f"Execution SHA: `{result.get('commit', '')}` (may be GitHub's PR merge SHA).")
+        for title, value in (
+            ("Trigger SHA (GitHub merge ref on PRs)", result.get("commit")),
+            ("Checked-out revision", result.get("checkout_commit")),
+        ):
+            if isinstance(value, str) and re.fullmatch("[a-f0-9]{40}", value):
+                body.append(f"{title}: `{value}`.")
     body += [f"[Exact Garnet profile]({url})" for url in sorted(urls)]
     if not urls:
         body.append("Exact Garnet profile not verified. Do not interpret a green job as recording proof.")

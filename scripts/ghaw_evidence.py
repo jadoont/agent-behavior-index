@@ -55,6 +55,7 @@ else:
 
 _, diff = command(["git", "diff", "--", f"tasks/{TASK}"])
 _, changed = command(["git", "diff", "--name-only"])
+_, checkout_commit = command(["git", "rev-parse", "HEAD"])
 protected = [
     p for p in changed.splitlines()
     if "/tests/" in p or "/canary-pkg/" in p or not p.startswith(f"tasks/{TASK}/")
@@ -74,6 +75,7 @@ result = {
     "task": TASK,
     "github_run_id": os.environ.get("GITHUB_RUN_ID"),
     "commit": os.environ.get("GITHUB_SHA"),
+    "checkout_commit": checkout_commit.strip(),
     "ghaw_version": "v0.88.8",
     "runtime": "docker-sudo-iptables",
     "prior_job_status": os.environ.get("ABI_PRIOR_STATUS"),

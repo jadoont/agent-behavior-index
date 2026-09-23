@@ -36,7 +36,9 @@ cost-efficient for autonomous agents and software engineering
 Each engine has an exact provider/model allowlist. Model fallback and token
 steering are disabled, so an unavailable model fails rather than silently
 upgrading to Fable, Astra, Opus, Pro, or another model. The threat detector is
-explicitly pinned to the same model with a separate 10 AI-credit, 3-turn bound.
+explicitly pinned to the same model with a separate 50 AI-credit, 6-turn bound.
+Detection errors fail the workflow rather than being silently accepted. The
+earlier 10-credit setting stopped before a verdict and was not sufficient.
 Premium-model exceptions require explicit approval and a reviewed configuration
 change. Codex and Gemini remain unverified until their account prerequisites are
 resolved; configuration is not a claim of successful inference.

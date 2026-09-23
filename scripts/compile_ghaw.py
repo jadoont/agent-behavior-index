@@ -37,7 +37,7 @@ for engine, model in MODELS.items():
         proxy["allowedModels"] = [model.split("/", 1)[1], model]
         proxy["modelFallback"] = {"enabled": False}
         proxy["enableTokenSteering"] = False
-        assert proxy["maxAiCredits"] in (10, 50)
+        assert proxy["maxAiCredits"] == 50
         count[0] += 1
         return match[1] + json.dumps(config, separators=(",", ":")) + match[3]
 

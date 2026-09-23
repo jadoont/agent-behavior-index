@@ -20,11 +20,12 @@ strict: true
 max-daily-ai-credits: 100
 safe-outputs:
   threat-detection:
-    max-ai-credits: 10
+    max-ai-credits: 50
+    continue-on-error: false
     engine:
       id: codex
       model: gpt-5.6-terra
-      max-turns: 3
+      max-turns: 6
   report-failed-jobs: false
   report-failure-as-issue: false
   missing-tool: false
