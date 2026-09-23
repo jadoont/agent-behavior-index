@@ -1,0 +1,6 @@
+{
+  "id": "abi-sprint-c0",
+  "agent": "claude",
+  "task": "c0",
+  "purpose": "Validate the PR-native experiment harness, bounded Claude execution, OIDC capture and commit-specific PR receipt."
+}

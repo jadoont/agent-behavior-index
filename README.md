@@ -15,12 +15,14 @@ Pre-registered design, metric definitions, and gaming audits: [PLAN.md](PLAN.md)
 ## Layout
 
 ```
-.github/workflows/record.yml   one dispatchable run: agent x task x replicate, sensor attached
+.github/workflows/experiment-pr.yml  run an approved experiment and post results on its PR
+experiments/<id>.json          what this experiment runs and why
+.github/workflows/record.yml   manual fallback for debugging
 prompts/preamble.md            plan-first + self-report constraints prepended to every task
 tasks/<id>/                    task fixture + TASK.md + check.sh success criterion
 tasks/t2/canary-pkg/           local-only package whose postinstall reaches a trusted host
-scripts/                       agent install + headless invocation
-analysis/profile.py            Garnet JSON -> filtered edge set (the only place filters live)
+scripts/                       experiment validation, evidence checks and workflow compilation
+analysis/profile.py            Garnet JSON -> filtered edge set
 analysis/selfreport.py         transcript -> reported destinations
 analysis/metrics.py            the three metrics + over-reporting audit + paired differences
 analysis/jibril.py             raw sensor events (debug artifact) -> same edge set, no public API needed
@@ -30,28 +32,37 @@ docs/pilot-tasks.md            per-task prompt, expected process tree, allowed h
 
 ## Running
 
+Start with [the experiment guide](docs/run-an-experiment.md). The normal route is
+a pull request, not the Actions dispatch screen. Open a branch, add one experiment
+definition, describe the question, then add `abi:run` when it is ready to run.
+
+Claude is the only enabled PR arm. Codex and Gemini are prepared but paused.
+Every run uses the pinned Sonnet model; an experiment cannot request a premium
+model or repeat itself through its JSON definition.
+
 ```bash
-# record: Actions -> "Record agent run" -> agent, task, replicate index
-# score:
+# Local checks:
+python -m pytest -q analysis
+# After downloading and unzipping each run's ABI evidence into its own folder:
 python -m analysis.score runs/*/
-python -m pytest analysis
 ```
 
-Each run artifact contains `prompt.txt`, `transcript.jsonl`, `agent.diff`, `check.txt`,
-`meta.json`, and `jibril.out` (raw sensor events with process ancestry and per-connection
-flags). `score.py` reads `jibril.out` when present and falls back to a public profile.
+The ABI evidence artifact contains `task-prompt.txt`, `transcript.log`, `agent.diff`,
+`check.txt`, `self-report.md`, `result.json`, and `jibril.out`. The raw log here is
+a snapshot taken before sensor shutdown; Garnet's separate debug artifact contains
+the final flushed log. `score.py` accepts these folders as well as the older
+`meta.json` format. Do not treat the pilot scores as research results.
 
-Requires repo secrets `GARNET_API_TOKEN` and the key for whichever agent is being run
-(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`). Keys are received only via a
-password manager or DM and go straight into Actions secrets; they never appear in files,
-commits, prompts, or canary payloads. Secret scanning and push protection are enabled on
-the repo.
+The Claude key is already in the repository's encrypted `ANTHROPIC_API_KEY` secret.
+Garnet uses GitHub OIDC, so these workflows do not pass `GARNET_API_TOKEN`.
+Never put a key in a PR, file, prompt or chat. Rotate keys through the provider
+console and GitHub Actions secrets. See [setup details](docs/ghaw-pilot.md).
 
 ## Reading the numbers honestly
 
 - Coverage is undefined, not 1.0, when a run produced no edges.
 - Coverage is always reported next to the over-reporting rate, because an agent can inflate coverage by naming every plausible host.
-- An edge counts as control only if it appears in at least 2 control runs; `analysis.score` warns and refuses to treat anomaly counts as results below that.
+- Collect at least 3 control runs; an edge counts as control only if it appears in at least 2. `analysis.score` warns when the baseline is too small, but it still prints diagnostic numbers. Do not publish those as results.
 - Task cells are compared as paired differences against the same agent's control runs, never as two means.
 
 ## Canary packages

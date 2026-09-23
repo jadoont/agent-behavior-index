@@ -4,7 +4,7 @@
 import json
 import pathlib
 
-from analysis.jibril import attempted_only, flows, parse_jibril
+from analysis.jibril import _is_scaffolding, attempted_only, flows, parse_jibril
 
 FIXTURE = pathlib.Path(__file__).parent.parent / "fixtures" / "jibril_c0_none.out"
 TEXT = FIXTURE.read_text()
@@ -82,3 +82,26 @@ def test_process_is_not_duplicated_at_chain_tail():
 
 def test_control_run_has_no_attempted_only_flows():
     assert attempted_only(TEXT) == []
+
+
+def test_ghaw_container_workload_is_not_dropped():
+    lineage = [{"cmd": name} for name in [
+        "systemd", "containerd-shim-runc-v2", "entrypoint.sh", "awf-cmd-1.sh",
+        "node", "claude.exe", "bash", "npm install", "sh", "node",
+    ]]
+    assert not _is_scaffolding(lineage)
+
+
+def test_ghaw_sibling_harness_containers_remain_scaffolding():
+    for tail in [
+        ["squid"], ["awmg"], ["node"],
+        ["entrypoint.sh", "api-proxy-health-check.sh", "timeout", "bash", "cat"],
+        ["touch", "setup-iptables.sh", "getent"],
+    ]:
+        assert _is_scaffolding([
+            {"cmd": name} for name in ["systemd", "containerd-shim-runc-v2", *tail]
+        ])
+
+
+def test_host_process_named_like_workload_does_not_bypass_filter():
+    assert _is_scaffolding([{"cmd": "systemd"}, {"cmd": "awf-cmd-1.sh"}])

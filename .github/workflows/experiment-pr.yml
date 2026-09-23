@@ -1,0 +1,71 @@
+name: ABI experiment PR
+run-name: "ABI experiment PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.head.sha }}"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+permissions:
+  contents: read
+concurrency:
+  group: abi-experiment-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  prepare:
+    # Paid inference is opt-in, same-repository, trusted-author and never a bot.
+    # Ordinary Dependabot PRs still get tokenless Garnet capture in test.yml.
+    if: >-
+      ${{ !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.type != 'Bot' &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) &&
+      contains(github.event.pull_request.labels.*.name, 'abi:run') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      task: ${{ steps.definition.outputs.task }}
+      experiment: ${{ steps.definition.outputs.experiment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: definition
+        name: Validate one bounded experiment definition
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ABI_PR: ${{ github.event.pull_request.number }}
+        run: python3 scripts/experiment_pr.py validate
+  experiment:
+    needs: prepare
+    permissions:
+      contents: read
+      actions: write
+      id-token: write
+    uses: ./.github/workflows/abi-claude.lock.yml
+    with:
+      task: ${{ needs.prepare.outputs.task }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  receipt:
+    if: always() && needs.prepare.result == 'success'
+    needs: [prepare, experiment]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Attach bounded result and exact receipt to PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ABI_PR: ${{ github.event.pull_request.number }}
+          ABI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ABI_EXPERIMENT: ${{ needs.prepare.outputs.experiment }}
+          ABI_TASK: ${{ needs.prepare.outputs.task }}
+          ABI_JOB_RESULT: ${{ needs.experiment.result }}
+        run: python3 scripts/experiment_pr.py receipt
