@@ -78,7 +78,8 @@ def receipt():
         rf"https://app\.garnet\.ai/public/runs/{run}\?profile=[a-f0-9-]{{36}}"
     )
     for job in jobs["jobs"]:
-        if job["name"].endswith(" / agent"):
+        if (job["name"].endswith(" / agent") and job["status"] == "completed"
+                and job["conclusion"] not in {"skipped", "cancelled"}):
             log = gh("api", "--allow-escape-sequences", f"repos/{repo}/actions/jobs/{job['id']}/logs")
             urls.update(pattern.findall(log))
     status = lambda key: "PASS" if result and result.get(key) is True else "NOT VERIFIED / FAIL"
