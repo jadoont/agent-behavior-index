@@ -1,0 +1,6 @@
+{
+  "id": "claude-c0-baseline",
+  "agent": "claude",
+  "task": "c0",
+  "purpose": "Record three unchanged Claude C0 runs to learn which process and network activity repeats when the task requires no package installation."
+}
