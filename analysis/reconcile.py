@@ -35,6 +35,7 @@ API_LOG = "sandbox/firewall/logs/api-proxy-logs/otel.jsonl"
 MCP_LOG = "mcp-logs/rpc-messages.jsonl"
 MCP_DOMAINS = "mcp-logs/observed-url-domains.json"
 PROMPT = "aw-prompts/prompt.txt"
+EVIDENCE_PROMPT = "task-prompt.txt"
 
 
 def sha256(content: bytes) -> str:
@@ -271,7 +272,7 @@ def summary_row(
         if squid_available
         else "squid_log_unavailable"
     )
-    if task == "c0" and canary_tunnels:
+    if task == "c0" and canary_tunnels and not kernel_direct:
         canary_status = "control_contact_unattributed"
     return {
         "github_run_id": profile.run_id,
@@ -314,9 +315,15 @@ def summary_row(
 
 
 def write_json(path: pathlib.Path, value: object) -> None:
-    path.write_text(
-        json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+    write_private(
+        path, json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
     )
+
+
+def write_private(path: pathlib.Path, content: str) -> None:
+    with path.open("w") as stream:
+        os.fchmod(stream.fileno(), 0o600)
+        stream.write(content)
 
 
 def build(
@@ -361,15 +368,20 @@ def build(
     if stream_bytes is None:
         raise ValueError("Agent artifact has no transcript")
     stream = stream_bytes.decode("utf-8")
-    prompt_bytes = members[PROMPT] or members["task-prompt.txt"]
-    prompt = prompt_bytes.decode("utf-8") if prompt_bytes else ""
-    session = convert(stream, profile.run_id, task, prompt)
     evidence_members: dict[str, bytes | None] = {}
     if evidence_path:
         evidence_members = {
             name: read_artifact(evidence_path, name)
-            for name in ("result.json", "self-report.md")
+            for name in ("result.json", "self-report.md", EVIDENCE_PROMPT)
         }
+    prompt_bytes = (
+        members[PROMPT]
+        or members["task-prompt.txt"]
+        or evidence_members.get(EVIDENCE_PROMPT)
+    )
+    prompt = prompt_bytes.decode("utf-8") if prompt_bytes else ""
+    session = convert(stream, profile.run_id, task, prompt)
+    if evidence_path:
         result_data = evidence_members["result.json"]
         if result_path and result_data != result_path.read_bytes():
             raise ValueError("Independent result file does not match evidence artifact")
@@ -412,7 +424,7 @@ def build(
         inventory is not None,
     )
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
-    (output / "session.jsonl").write_text(trace)
+    write_private(output / "session.jsonl", trace)
     write_json(
         output / "said.json",
         {
@@ -452,6 +464,7 @@ def build(
     )
     write_json(output / "reconciliation.json", row)
     with (output / "reconciliation.csv").open("w", newline="") as stream_file:
+        os.fchmod(stream_file.fileno(), 0o600)
         writer = csv.DictWriter(stream_file, fieldnames=list(row))
         writer.writeheader()
         writer.writerow(

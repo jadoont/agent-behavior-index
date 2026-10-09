@@ -108,16 +108,38 @@ def convert(text: str, run_id: str, task: str, prompt: str = "") -> Session:
             blocks = native.get("content")
             if not isinstance(blocks, list):
                 raise ValueError(f"line {line_number}: expected Claude content blocks")
-            response: dict[str, object] = {"role": "assistant", "content": ""}
             plain: list[str] = []
             thinking: list[str] = []
             tool_calls: list[dict[str, object]] = []
+
+            def flush_assistant(include_empty: bool = False) -> None:
+                if not plain and not thinking and not tool_calls and not include_empty:
+                    return
+                content = "\n".join(item for item in plain if item)
+                response: dict[str, object] = {"role": "assistant", "content": content}
+                if thinking:
+                    response["reasoningContent"] = "\n".join(thinking)
+                if tool_calls:
+                    response["toolCalls"] = list(tool_calls)
+                if model:
+                    response["model"] = model
+                add(response, line_number)
+                if has_self_report(content):
+                    report_candidates.append((line_number, "assistant text", content))
+                plain.clear()
+                thinking.clear()
+                tool_calls.clear()
+
             for block_value in blocks:
                 block = object_value(block_value, f"line {line_number} block")
                 block_type = block.get("type")
                 if block_type == "text":
+                    if tool_calls:
+                        flush_assistant()
                     plain.append(text_value(block.get("text")))
                 elif block_type == "thinking":
+                    if tool_calls:
+                        flush_assistant()
                     thinking.append(text_value(block.get("thinking")))
                 elif block_type == "tool_use":
                     call_id = text_value(block.get("id"))
@@ -143,17 +165,7 @@ def convert(text: str, run_id: str, task: str, prompt: str = "") -> Session:
                     )
                 else:
                     unhandled.add(text_value(block_type) or "unknown")
-            content = "\n".join(item for item in plain if item)
-            response["content"] = content
-            if thinking:
-                response["reasoningContent"] = "\n".join(thinking)
-            if tool_calls:
-                response["toolCalls"] = tool_calls
-            if model:
-                response["model"] = model
-            add(response, line_number)
-            if has_self_report(content):
-                report_candidates.append((line_number, "assistant text", content))
+            flush_assistant(include_empty=True)
         else:
             blocks = native.get("content")
             if not isinstance(blocks, list):
