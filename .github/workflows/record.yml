@@ -9,7 +9,7 @@ on:
         default: claude
       task:
         type: choice
-        options: [c0, t2]
+        options: [c0, t2, t3]
         default: c0
 permissions:
   contents: read

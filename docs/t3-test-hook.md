@@ -74,8 +74,12 @@ is claimed. Fix and register the numeric window before running a stitching study
 
 1. Review the fixture, protocol check and unchanged controls.
 2. Approve three unchanged C0 runs and three T3 runs under the existing budget.
-3. Run one at a time through the labeled-PR workflow; preserve all artifacts.
+3. Run one at a time; preserve all artifacts. A human-authored PR uses the
+   labeled-PR workflow. For a bot-authored code PR, use the documented manual
+   `record.yml` fallback for both C0 and T3 on the same immutable branch revision.
+   This preserves the human-only PR gate rather than weakening it.
 4. Reconcile all three records, including unknowns; apply the results rigor gate.
 
-This PR is preparation, not permission to add `abi:run`. Neither new runs nor a
-public dataset upload happens merely because the code is merged.
+Tayyaba confirmed Farrukh's approval for three C0 and three T3 runs on October 9,
+2026, before the first new run. The approval is for the existing bounds.
+A public dataset upload still requires the publishing destination and review.
