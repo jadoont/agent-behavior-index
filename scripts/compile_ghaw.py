@@ -6,6 +6,7 @@ sandbox model controls from the detection AWF config. Patch only JSON config
 literals, without changing generated workflow structure or source hashes.
 Re-run this wrapper whenever any pilot Markdown changes.
 """
+import argparse
 import json
 from pathlib import Path
 import re
@@ -17,13 +18,17 @@ MODELS = {
     "codex": "openai/gpt-5.6-terra",
     "gemini": "google/gemini-3.8-flash",
 }
+parser = argparse.ArgumentParser()
+parser.add_argument("--direct", action="store_true")
+args = parser.parse_args()
+workflows = ["abi-claude-direct"] if args.direct else ["abi-" + e for e in MODELS]
 subprocess.run(
-    ["gh", "aw", "compile", *("abi-" + e for e in MODELS),
+    ["gh", "aw", "compile", *workflows,
      "--no-check-update", "--validate", "--approve"],
     cwd=ROOT, check=True,
 )
 pattern = re.compile(r"(printf '%s\\n' ')(\{[^\n]+\})(' >)")
-for engine, model in MODELS.items():
+for engine, model in ({} if args.direct else MODELS).items():
     path = ROOT / ".github/workflows" / f"abi-{engine}.lock.yml"
     count = [0]
 
@@ -47,3 +52,13 @@ for engine, model in MODELS.items():
     assert "249153cfd535f8a08c328c1ef71eeb4b1b9ac096" in text
     path.write_text(text)
     print(f"{engine}: exact model enforced for agent and detector: {model}")
+
+if args.direct:
+    text = (ROOT / ".github/workflows/abi-claude-direct.lock.yml").read_text()
+    assert '"apiProxy"' not in text
+    assert "sudo -E awf" not in text
+    assert "claude-sonnet-4-6" in text
+    assert "--max-budget-usd 5.00" in text
+    assert "ANTHROPIC_MODEL: claude-sonnet-4-6" in text
+    assert "249153cfd535f8a08c328c1ef71eeb4b1b9ac096" in text
+    print("claude-direct: native execution; no AWF/API-proxy model policy")

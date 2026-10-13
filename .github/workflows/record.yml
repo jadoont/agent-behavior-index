@@ -5,11 +5,11 @@ on:
     inputs:
       agent:
         type: choice
-        options: [all, claude, codex, gemini]
+        options: [all, claude, claude-direct, codex, gemini]
         default: claude
       task:
         type: choice
-        options: [c0, t2, t3]
+        options: [c0, t2, t3, t3-direct]
         default: c0
 permissions:
   contents: read
@@ -22,6 +22,13 @@ jobs:
   claude:
     if: inputs.agent == 'all' || inputs.agent == 'claude'
     uses: ./.github/workflows/abi-claude.lock.yml
+    with:
+      task: ${{ inputs.task }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  claude-direct:
+    if: inputs.agent == 'claude-direct'
+    uses: ./.github/workflows/abi-claude-direct.lock.yml
     with:
       task: ${{ inputs.task }}
     secrets:
