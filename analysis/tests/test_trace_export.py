@@ -575,3 +575,111 @@ def test_direct_bundle_keeps_task_identity_and_attributes_the_child(tmp_path: Pa
             evidence_path=evidence,
             condition="direct",
         )
+
+
+@pytest.mark.parametrize(
+    ("process", "chain", "expected"),
+    [
+        (
+            "python3.12",
+            ["Runner.Worker", "claude.exe", "bash", "python3.12"],
+            True,
+        ),
+        ("claude.exe", ["Runner.Worker", "claude.exe"], False),
+        ("awmg", ["systemd", "containerd-shim-runc-v2", "awmg"], False),
+    ],
+)
+def test_direct_raw_observation_does_not_fill_missing_profile_edges(
+    tmp_path: Path, process: str, chain: list[str], expected: bool
+) -> None:
+    profile = tmp_path / "profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "profiles": [
+                    {
+                        "run": {
+                            "run_id": "1",
+                            "profile_id": "p",
+                            "repository": "jadoont/agent-behavior-index",
+                            "workflow": "Record agent run",
+                            "job": "agent",
+                            "commit_sha": "abc",
+                        },
+                        "associations": [],
+                    }
+                ]
+            }
+        )
+    )
+    agent = tmp_path / "agent.zip"
+    with ZipFile(agent, "w") as archive:
+        archive.writestr(
+            "agent-stdio.log",
+            event(
+                {
+                    "type": "assistant",
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "Task done"}],
+                    },
+                }
+            ),
+        )
+    result = tmp_path / "result.json"
+    result.write_text(
+        json.dumps(
+            {
+                "github_run_id": "1",
+                "checkout_commit": "abc",
+                "condition": "direct",
+                "task": "t3-direct",
+                "engine": "claude",
+            }
+        )
+    )
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(
+        json.dumps(
+            {
+                "edges": [
+                    {
+                        "process": process,
+                        "chain": chain,
+                        "remote_names": ["api.github.com"],
+                        "port": 443,
+                    }
+                ]
+            }
+        )
+    )
+    output = tmp_path / "private"
+    build(
+        profile,
+        agent,
+        output,
+        "t3-direct",
+        result_path=result,
+        inventory_path=inventory,
+        condition="direct",
+    )
+    row = json.loads((output / "reconciliation.json").read_text())
+    kernel = json.loads((output / "kernel.json").read_text())
+    assert row["canary_attribution_source"] == "garnet_public_profile"
+    assert row["canary_attribution"] == "no_direct_contact_in_public_profile"
+    assert row["kernel_workload_edges"] == 0
+    assert row["raw_canary_workload_edge_observed"] is expected
+    assert kernel["edges"] == []
+    assert kernel["raw_inventory"][0]["process"] == process
+
+    without_inventory = tmp_path / "without-inventory"
+    build(
+        profile,
+        agent,
+        without_inventory,
+        "t3-direct",
+        result_path=result,
+        condition="direct",
+    )
+    missing = json.loads((without_inventory / "reconciliation.json").read_text())
+    assert missing["raw_canary_workload_edge_observed"] is None

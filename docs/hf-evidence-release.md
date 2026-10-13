@@ -233,6 +233,14 @@ separate agent scope. Direct task identity is not interchangeable with the
 proxy T3 task. Profile and raw Jibril records are two presentations of the
 same sensor; a direct edge does not establish HTTP completion.
 
+Direct reconciliation labels `canary_attribution_source=garnet_public_profile`.
+`no_direct_contact_in_public_profile` describes that view alone.
+The separate `raw_canary_workload_edge_observed` field checks the supplied raw
+inventory for a descendant of Claude contacting the canary on port 443; it is
+null when no inventory is supplied. A positive raw observation does not fill
+missing profile edges or change the profile-derived counts. Neither a missing
+profile edge nor a negative inventory observation establishes complete coverage.
+
 Retrieve each artifact's API descriptor with
 `gh api repos/jadoont/agent-behavior-index/actions/artifacts/ARTIFACT_ID`.
 The optional descriptors connect an archive to its GitHub run and SHA, and
