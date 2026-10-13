@@ -224,6 +224,15 @@ with an `edges` array. Preserve the original sensor log separately with its
 source run ID and checksum. Do not use an inventory to infer a missing proxy
 join.
 
+For the separate host-runner condition, pass `--condition direct` and use
+`--task c0` or `--task t3-direct`. An independent `result.json` declaring
+`condition=direct` and the exact Garnet profile SHA is required. The exporter
+marks Squid and API-proxy evidence not applicable, counts Python descendants
+of Claude as workload edges, and leaves Claude's own provider traffic in a
+separate agent scope. Direct task identity is not interchangeable with the
+proxy T3 task. Profile and raw Jibril records are two presentations of the
+same sensor; a direct edge does not establish HTTP completion.
+
 Retrieve each artifact's API descriptor with
 `gh api repos/jadoont/agent-behavior-index/actions/artifacts/ARTIFACT_ID`.
 The optional descriptors connect an archive to its GitHub run and SHA, and

@@ -36,6 +36,8 @@ MCP_LOG = "mcp-logs/rpc-messages.jsonl"
 MCP_DOMAINS = "mcp-logs/observed-url-domains.json"
 PROMPT = "aw-prompts/prompt.txt"
 EVIDENCE_PROMPT = "task-prompt.txt"
+PROXY_CONDITION = "awf-squid"
+DIRECT_CONDITION = "direct"
 
 
 def sha256(content: bytes) -> str:
@@ -102,14 +104,26 @@ def boundary_counts(data: bytes | None, name: str) -> dict[str, object]:
 
 
 def kernel_record(
-    profile: Profile, counters: dict[str, int], workspace: str
+    profile: Profile,
+    counters: dict[str, int],
+    workspace: str,
+    condition: str = PROXY_CONDITION,
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for edge in profile.edges:
         row = dataclasses.asdict(edge)
         chain = edge.ancestry
         row["scope"] = (
-            "workload" if any("awf-cmd-" in item for item in chain) else "unclassified"
+            "workload"
+            if any("awf-cmd-" in item for item in chain)
+            or (
+                condition == DIRECT_CONDITION
+                and "claude.exe" in chain
+                and edge.process != "claude.exe"
+            )
+            else "agent"
+            if condition == DIRECT_CONDITION and edge.process == "claude.exe"
+            else "unclassified"
         )
         redacted = redact_value(row, counters, workspace)
         rows.append(object_value(redacted, "kernel edge"))
@@ -206,16 +220,32 @@ def supplied_result(
     profile: Profile,
     task: str,
     from_archive: bytes | None = None,
+    condition: str = PROXY_CONDITION,
 ) -> dict[str, object]:
     data = path.read_bytes() if path else from_archive
     if data is None:
+        if condition == DIRECT_CONDITION:
+            raise ValueError(
+                "Direct export requires an independent result with condition"
+            )
         return {"available": False}
     result = object_value(json.loads(data), "independent check")
     if str(result.get("github_run_id")) != profile.run_id or result.get("task") != task:
         raise ValueError("Result task/run does not match Garnet profile")
+    recorded_condition = result.get("condition")
+    if recorded_condition != condition and (
+        condition == DIRECT_CONDITION or recorded_condition is not None
+    ):
+        raise ValueError("Result condition does not match requested export condition")
+    if (
+        condition == DIRECT_CONDITION
+        and result.get("checkout_commit") != profile.commit_sha
+    ):
+        raise ValueError("Direct checkout commit does not match Garnet profile")
     return {
         "available": True,
         "source_sha256": sha256(data),
+        "condition": recorded_condition or condition,
         "task_pass": result.get("task_pass"),
         "protocol_pass": result.get("protocol_pass"),
         "self_report_captured": result.get("self_report_captured"),
@@ -250,6 +280,7 @@ def summary_row(
     result: dict[str, object],
     task: str,
     inventory_available: bool,
+    condition: str = PROXY_CONDITION,
 ) -> dict[str, object]:
     reported = sorted(reported_destinations(session.self_report))
     workload = [
@@ -270,6 +301,8 @@ def summary_row(
         if canary_tunnels
         else "no_squid_contact_observed"
         if squid_available
+        else "no_direct_contact_observed"
+        if condition == DIRECT_CONDITION
         else "squid_log_unavailable"
     )
     if task == "c0" and canary_tunnels and not kernel_direct:
@@ -277,6 +310,7 @@ def summary_row(
     return {
         "github_run_id": profile.run_id,
         "task": task,
+        "condition": condition,
         "tool_calls": len(session.tool_uses),
         "unanswered_tool_calls": sum(
             not call.result_seen for call in session.tool_uses
@@ -337,12 +371,19 @@ def build(
     agent_descriptor_path: pathlib.Path | None = None,
     evidence_path: pathlib.Path | None = None,
     evidence_descriptor_path: pathlib.Path | None = None,
+    condition: str = PROXY_CONDITION,
 ) -> dict[str, object]:
     profile = load_profile(profile_path)
     if profile.repository != "jadoont/agent-behavior-index":
         raise ValueError("Profile repository does not match ABI")
-    if task not in {"c0", "t2", "t3"}:
-        raise ValueError("Unknown task")
+    if condition == DIRECT_CONDITION:
+        if task not in {"c0", "t3-direct"}:
+            raise ValueError("Unknown direct task")
+    elif condition == PROXY_CONDITION:
+        if task not in {"c0", "t2", "t3"}:
+            raise ValueError("Unknown proxy task")
+    else:
+        raise ValueError("Unknown condition")
     if profile.job != "agent":
         raise ValueError("Use the agent job's Garnet profile, not another CI job")
     if evidence_descriptor_path and not evidence_path:
@@ -395,19 +436,27 @@ def build(
     workspace = workspace_path(stream)
     trace, redactions = render_sts(session, workspace)
     supplemental_redactions: dict[str, int] = {}
-    kernel = kernel_record(profile, supplemental_redactions, workspace)
+    kernel = kernel_record(profile, supplemental_redactions, workspace, condition)
     tunnels: list[dict[str, object]] = []
     other_lines: int | None = None
     squid_data = members[SQUID_LOG]
+    if condition == DIRECT_CONDITION and squid_data is not None:
+        raise ValueError("Direct artifact unexpectedly contains a Squid log")
     if squid_data is not None:
         tunnels, other_lines = squid_tunnels(squid_data)
     clean_tunnels = redact_value(tunnels, supplemental_redactions, workspace)
     agent_result = supplied_result(
-        result_path, profile, task, evidence_members.get("result.json")
+        result_path, profile, task, evidence_members.get("result.json"), condition
     )
     if agent_result.get("available") and agent_result.get("engine") != "claude":
         raise ValueError("This exporter accepts Claude stream artifacts")
     github_run = supplied_run(github_run_path, profile)
+    if (
+        condition == DIRECT_CONDITION
+        and github_run.get("available")
+        and github_run.get("head_sha") != profile.commit_sha
+    ):
+        raise ValueError("Direct GitHub run SHA does not match Garnet profile")
     inventory: list[dict[str, object]] | None = None
     if inventory_path:
         inventory = inventory_rows(
@@ -422,6 +471,7 @@ def build(
         agent_result,
         task,
         inventory is not None,
+        condition,
     )
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     write_private(output / "session.jsonl", trace)
@@ -448,9 +498,24 @@ def build(
         output / "harness.json",
         {
             "source": "gh-aw boundary logs, not agent tool calls",
+            "condition": condition,
             "squid_available": members[SQUID_LOG] is not None,
+            "squid_status": (
+                "not_applicable"
+                if condition == DIRECT_CONDITION
+                else "available"
+                if members[SQUID_LOG] is not None
+                else "unavailable"
+            ),
             "squid_tunnels": clean_tunnels,
             "other_squid_lines": other_lines,
+            "api_proxy_status": (
+                "not_applicable"
+                if condition == DIRECT_CONDITION
+                else "available"
+                if members[API_LOG] is not None
+                else "unavailable"
+            ),
             "api_proxy_otel": boundary_counts(members[API_LOG], API_LOG),
             "mcp_rpc": boundary_counts(members[MCP_LOG], MCP_LOG),
             "mcp_observed_url_domains": (
@@ -477,6 +542,7 @@ def build(
         "release_status": "PRIVATE_REVIEW_REQUIRED",
         "run_id": profile.run_id,
         "task": task,
+        "condition": condition,
         "repository": profile.repository,
         "agent": "claude",
         "garnet_profile_url": API_TEMPLATE.replace("/api/public/", "/public/").format(
@@ -514,7 +580,11 @@ def build(
             "agent_text_redaction_counts": redactions,
             "observer_and_harness_redaction_counts": supplemental_redactions,
             "kernel_export": "filtered public profile; no agent/proxy stitching",
-            "proxy_contacts": "unattributed unless independently linked; CONNECT is not GET",
+            "proxy_contacts": (
+                "not applicable; no Squid in direct condition"
+                if condition == DIRECT_CONDITION
+                else "unattributed unless independently linked; CONNECT is not GET"
+            ),
             "implementation_sha256": {
                 filename: sha256(
                     pathlib.Path(__file__).with_name(filename).read_bytes()
@@ -542,7 +612,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=pathlib.Path, required=True)
     parser.add_argument("--agent-artifact", type=pathlib.Path, required=True)
-    parser.add_argument("--task", choices=("c0", "t2", "t3"), required=True)
+    parser.add_argument(
+        "--task", choices=("c0", "t2", "t3", "t3-direct"), required=True
+    )
+    parser.add_argument(
+        "--condition",
+        choices=(PROXY_CONDITION, DIRECT_CONDITION),
+        default=PROXY_CONDITION,
+    )
     parser.add_argument("--github-run", type=pathlib.Path)
     parser.add_argument("--result", type=pathlib.Path)
     parser.add_argument("--raw-inventory", type=pathlib.Path)
@@ -563,6 +640,7 @@ def main() -> None:
         args.agent_descriptor,
         args.evidence_artifact,
         args.evidence_descriptor,
+        args.condition,
     )
     print(
         json.dumps(

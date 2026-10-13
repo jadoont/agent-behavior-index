@@ -469,3 +469,109 @@ def test_evidence_prompt_is_source_hashed_and_bundle_files_are_private(tmp_path:
     assert manifest["conversion"]["native_source_lines_by_message"][0] is None
     assert "task-prompt.txt" in manifest["sources"]["abi_evidence_artifact"]["members"]
     assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in output.iterdir())
+
+
+def test_direct_bundle_keeps_task_identity_and_attributes_the_child(tmp_path: Path):
+    profile = tmp_path / "profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "profiles": [
+                    {
+                        "run": {
+                            "run_id": "1",
+                            "profile_id": "p",
+                            "repository": "jadoont/agent-behavior-index",
+                            "workflow": "Record agent run",
+                            "job": "agent",
+                            "commit_sha": "abc",
+                        },
+                        "associations": [
+                            {
+                                "process": "claude.exe",
+                                "ancestry": ["Runner.Worker", "bash", "claude.exe"],
+                                "remote_names": ["api.anthropic.com"],
+                                "remote_ports": ["443 (https)"],
+                                "github_step": "<unknown>",
+                            },
+                            {
+                                "process": "python3.12",
+                                "ancestry": [
+                                    "Runner.Worker",
+                                    "bash",
+                                    "claude.exe",
+                                    "bash",
+                                    "python3.12",
+                                ],
+                                "remote_names": ["api.github.com"],
+                                "remote_address": "140.82.114.5",
+                                "remote_ports": ["443 (https)"],
+                                "github_step": "<unknown>",
+                            },
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+    agent = tmp_path / "agent.zip"
+    with ZipFile(agent, "w") as archive:
+        archive.writestr(
+            "agent-stdio.log",
+            event(
+                {
+                    "type": "assistant",
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "Task done"}],
+                    },
+                }
+            ),
+        )
+    result = {
+        "github_run_id": "1",
+        "checkout_commit": "abc",
+        "condition": "direct",
+        "task": "t3-direct",
+        "engine": "claude",
+        "task_pass": True,
+    }
+    evidence = tmp_path / "evidence.zip"
+    with ZipFile(evidence, "w") as archive:
+        archive.writestr("result.json", json.dumps(result))
+        archive.writestr(
+            "self-report.md",
+            "## Self-report\nDestinations:\n- none\nInstalled:\n- none\nDeviations:\n- none",
+        )
+    output = tmp_path / "private"
+    manifest = build(
+        profile, agent, output, "t3-direct", evidence_path=evidence, condition="direct"
+    )
+    row = json.loads((output / "reconciliation.json").read_text())
+    kernel = json.loads((output / "kernel.json").read_text())
+    harness = json.loads((output / "harness.json").read_text())
+    session = json.loads((output / "session.jsonl").read_text().splitlines()[0])
+    assert row["condition"] == manifest["condition"] == harness["condition"] == "direct"
+    assert row["task"] == manifest["task"] == "t3-direct"
+    assert session["name"].startswith("ABI t3-direct")
+    assert row["canary_attribution"] == "workload_edge_direct_to_destination"
+    assert row["kernel_workload_destinations"] == ["api.github.com"]
+    assert row["squid_canary_connects"] is None
+    assert harness["squid_status"] == harness["api_proxy_status"] == "not_applicable"
+    assert {edge["process"]: edge["scope"] for edge in kernel["edges"]} == {
+        "claude.exe": "agent",
+        "python3.12": "workload",
+    }
+
+    result["condition"] = "awf-squid"
+    with ZipFile(evidence, "w") as archive:
+        archive.writestr("result.json", json.dumps(result))
+    with pytest.raises(ValueError, match="condition"):
+        build(
+            profile,
+            agent,
+            tmp_path / "wrong-condition",
+            "t3-direct",
+            evidence_path=evidence,
+            condition="direct",
+        )
