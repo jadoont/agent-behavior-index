@@ -24,10 +24,13 @@ steps:
     env:
       ABI_TASK: ${{ inputs.task }}
     run: |
-      case "$ABI_TASK" in c0|t2) ;; *) exit 2 ;; esac
+      case "$ABI_TASK" in c0|t2|t3) ;; *) exit 2 ;; esac
       python3 -m pip install pytest
       mkdir -p /tmp/abi-evidence
       cp scripts/ghaw_evidence.py /tmp/abi-evidence-check.py
+      if [ "$ABI_TASK" = t3 ]; then
+        cp tasks/t3/conftest.py /tmp/abi-t3-conftest.py
+      fi
       python3 scripts/render_prompt.py "tasks/$ABI_TASK" > /tmp/abi-evidence/task-prompt.txt
   - name: Require verified Garnet organization for Codex
     if: env.ABI_ENGINE == 'codex'

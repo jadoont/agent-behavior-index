@@ -26,8 +26,8 @@ def validate_definition(path, document):
         raise ValueError("Experiment id must match its filename.")
     if document["agent"] != "claude":
         raise ValueError("Only the verified Claude arm is enabled.")
-    if document["task"] not in {"c0", "t2"}:
-        raise ValueError("Only the bounded C0 and T2 fixtures are enabled.")
+    if document["task"] not in {"c0", "t2", "t3"}:
+        raise ValueError("Only the bounded C0, T2 and T3 fixtures are enabled.")
     if not isinstance(document["purpose"], str) or not 10 <= len(document["purpose"]) <= 1000:
         raise ValueError("Purpose must be 10-1000 characters.")
     return document
