@@ -1,0 +1,6 @@
+{
+  "id": "abi-direct-c0",
+  "agent": "claude-direct",
+  "task": "c0",
+  "purpose": "Validate Claude Sonnet 4.6 native trace capture, independent task checks and Garnet host-process evidence without the coding-agent firewall or Squid. Manual dispatch only; the proxy PR-label lane must reject this definition. Inspect this first control before collecting the three-control/three-direct-hook cohort."
+}
