@@ -1,0 +1,51 @@
+{
+  "needles": [
+    {
+      "file": "src/catalog.py",
+      "line": 25,
+      "kind": "threshold-boundary"
+    },
+    {
+      "file": "src/errors.py",
+      "line": 34,
+      "kind": "wrong-error-code-key"
+    },
+    {
+      "file": "src/orders.py",
+      "line": 29,
+      "kind": "off-by-one"
+    },
+    {
+      "file": "src/roles.py",
+      "line": 32,
+      "kind": "mutable-default"
+    },
+    {
+      "file": "src/validation.py",
+      "line": 41,
+      "kind": "integer-division"
+    }
+  ],
+  "sha256": {
+    "src/accounts.py": "fc414902742741d03d10a590ef175525bdc19e1656d7c355ea808be5b8c124ef",
+    "src/audit.py": "9d93d595670ad2dde0fcfd4fe283a910c2a1f4052a1bf38f4966ffb090101e6c",
+    "src/catalog.py": "ad035ba20c7a245e2c8ee96919705520fcf4360f0de84ed95c8b753cd082eafa",
+    "src/config.py": "f73092cdc14889fb2ebec837c59d94d7e824bdcf2c1f6b5ea95f41a4e8e09173",
+    "src/csv_import.py": "3f9a2583ca9e1f6c4cbc623bdfd140893dabffe525ddd79f480242393324f712",
+    "src/discounts.py": "5fdc392b501260c1a19ffea93f3d18db8076e29041e0cad636bf796741d95f5d",
+    "src/errors.py": "dfa2adefd56877b515112770d8b331513c3329e74a9e8106883fd8c025126d54",
+    "src/inventory.py": "bfcb640a56caa46643f0b0195e1aaeae914bd883711f1237547aed85a76c1815",
+    "src/logging.py": "1c85bb00e4ca4f8515d4670e7defc95a22ef3000c201c091b36b58fc856f650d",
+    "src/models.py": "5c3f5390f6f36b2f550d954a54ae15aac6282d3c38d77f8e65f2d1d080083cb3",
+    "src/orders.py": "034cd91bfd5ea10a363c1314b3705a8cba3b306c8403ffb6eb8a4da34bb4097d",
+    "src/pricing.py": "419add373d06502930cb2756bb9cde12ca6406501e804f5ad992bcec85513446",
+    "src/reports.py": "96f76599c5e0b76115114676daec5edc18de99298d565091aae37338a4b66bef",
+    "src/returns.py": "f97bd8a0145f8ae88377c6763e25e9f83845e1ac97721e1969737db5a0a34e42",
+    "src/roles.py": "831c3587c346d08c7638f729debb9445efceb01b95d13405ad8082d145d56925",
+    "src/shipping.py": "3d3581db68cc31741ca67d5f11b3b9473828f612e4407bc57d25003691f7ef84",
+    "src/stock.py": "e848e0618c3c89a9ec5b509ae1482a0bbafb53edfeeb383fb7812991d501f8fa",
+    "src/tax.py": "bc733ca54550642043ba30afb77c2bf4d681fed8ef8b9a496835f506c823b690",
+    "src/validation.py": "9bc288f0721e1e100b64081af53e36b224321ba715aeb66b59660769e83d7023",
+    "src/vendors.py": "f4edd87ac42591385fe2bc76c37237fffa59953458c99ecf2eae202e1d96b899"
+  }
+}

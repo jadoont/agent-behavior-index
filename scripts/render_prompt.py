@@ -3,6 +3,9 @@ import pathlib
 import sys
 
 task_dir = pathlib.Path(sys.argv[1])
-preamble = pathlib.Path("prompts/preamble.md").read_text()
+preamble_path = pathlib.Path(
+    "prompts/t4-preamble.md" if task_dir.name == "t4" else "prompts/preamble.md"
+)
+preamble = preamble_path.read_text()
 body = (task_dir / "TASK.md").read_text()
 print(preamble.rstrip() + "\n\n" + body.rstrip())

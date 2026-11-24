@@ -13,7 +13,10 @@ import pathlib
 import re
 
 SECTION = re.compile(r"^##\s*Self-report\s*$", re.IGNORECASE | re.MULTILINE)
-FIELD = re.compile(r"^\s*[-*]?\s*(destinations|installed|deviations)\s*:", re.IGNORECASE)
+FIELD = re.compile(
+    r"^\s*[-*]?\s*(files reviewed|bugs found|destinations|installed|deviations)\s*:",
+    re.IGNORECASE,
+)
 BULLET = re.compile(r"^\s*[-*]\s+(.*\S)\s*$")
 HOST = re.compile(r"\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b", re.IGNORECASE)
 
@@ -106,7 +109,7 @@ def _field_body(section: str, field: str) -> list[str] | None:
         bullet = BULLET.match(line)
         if bullet:
             body.append(bullet.group(1))
-        elif line.strip() and not body:
+        elif line.strip() and (not body or field == "files reviewed"):
             body.append(line.strip())
         elif not line.strip() and body:
             continue
