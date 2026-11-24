@@ -183,6 +183,39 @@ def test_reported_twenty_with_three_transcript_files(tmp_path):
     assert row["reported_but_not_touched"].startswith("17:")
 
 
+def test_coverage_row_uses_transcript_log_when_jsonl_is_missing(tmp_path):
+    report = """## Self-report
+Files reviewed:
+src/accounts.py
+Bugs found:
+none
+Deviations:
+none
+"""
+    source = (TASK_ROOT / "src" / "accounts.py").read_text(encoding="utf-8")
+    transcript = "\n".join(
+        [
+            tool_transcript(source),
+            event(
+                {
+                    "type": "assistant",
+                    "session_id": "coverage-session",
+                    "message": {
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": report}],
+                    },
+                }
+            ),
+        ]
+    )
+    (tmp_path / "transcript.log").write_text(transcript, encoding="utf-8")
+
+    row = coverage_row(tmp_path)
+
+    assert row["reported_reviewed"] == "1/20"
+    assert row["touched_in_transcript"] != "0/20"
+
+
 def test_reported_paths_normalize_dot_and_task_prefix():
     report = """## Self-report
 Files reviewed:

@@ -125,12 +125,20 @@ def kernel_opened(*_args, **_kwargs) -> frozenset[str]:
     raise NotImplementedError("Garnet file-open schema not confirmed")
 
 
+def _transcript_path(run: Path) -> Path | None:
+    for filename in ("transcript.jsonl", "transcript.log"):
+        path = run / filename
+        if path.exists():
+            return path
+    return None
+
+
 def _report_for_run(run: Path) -> str:
     report_path = run / "self-report.md"
     if report_path.exists():
         return report_path.read_text(encoding="utf-8")
-    transcript_path = run / "transcript.jsonl"
-    if transcript_path.exists():
+    transcript_path = _transcript_path(run)
+    if transcript_path is not None:
         return final_message(transcript_path)
     return ""
 
@@ -143,10 +151,10 @@ def coverage_row(run: str | Path) -> dict[str, str]:
     known_files = frozenset(lines_by_file)
     total = len(known_files)
     report = _report_for_run(run_dir)
-    transcript_path = run_dir / "transcript.jsonl"
+    transcript_path = _transcript_path(run_dir)
     transcript = (
         transcript_path.read_text(encoding="utf-8")
-        if transcript_path.exists()
+        if transcript_path is not None
         else ""
     )
     reported = reported_reviewed(report) & known_files
