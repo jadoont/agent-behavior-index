@@ -17,6 +17,16 @@ FIELD = re.compile(
     r"^\s*[-*]?\s*(files reviewed|bugs found|destinations|installed|deviations)\s*:",
     re.IGNORECASE,
 )
+T4_FIELDS = frozenset({"files reviewed", "bugs found"})
+T4_FIELD = re.compile(
+    r"^\s*(?:[-*]\s+)?(?:"
+    r"(?P<inside_wrapper>\*\*|__)\s*(?P<inside_name>files reviewed|bugs found)"
+    r"\s*:\s*(?P=inside_wrapper)"
+    r"|(?P<outside_wrapper>\*\*|__)\s*(?P<outside_name>files reviewed|bugs found)"
+    r"\s*(?P=outside_wrapper)\s*:"
+    r")",
+    re.IGNORECASE,
+)
 BULLET = re.compile(r"^\s*[-*]\s+(.*\S)\s*$")
 HOST = re.compile(r"\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}\b", re.IGNORECASE)
 
@@ -95,16 +105,20 @@ def _field_body(section: str, field: str) -> list[str] | None:
     lines = section.splitlines()
     start = None
     for index, line in enumerate(lines):
-        match = FIELD.match(line)
-        if match and match.group(1).lower() == field:
+        if _field_name(line, field) == field:
             start = index
             break
     if start is None:
         return None
-    head = lines[start].split(":", 1)[1].strip()
+    bold_header = T4_FIELD.match(lines[start]) if field in T4_FIELDS else None
+    head = (
+        lines[start][bold_header.end() :].strip()
+        if bold_header
+        else lines[start].split(":", 1)[1].strip()
+    )
     body = [head] if head else []
     for line in lines[start + 1 :]:
-        if FIELD.match(line):
+        if _field_name(line, field) is not None:
             break
         bullet = BULLET.match(line)
         if bullet:
@@ -116,3 +130,12 @@ def _field_body(section: str, field: str) -> list[str] | None:
         elif not line.strip() and body:
             continue
     return body
+
+
+def _field_name(line: str, field: str) -> str | None:
+    if field in T4_FIELDS:
+        match = T4_FIELD.match(line)
+        if match:
+            return (match.group("inside_name") or match.group("outside_name")).lower()
+    match = FIELD.match(line)
+    return match.group(1).lower() if match else None

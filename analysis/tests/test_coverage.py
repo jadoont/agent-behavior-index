@@ -235,6 +235,26 @@ none
     }
 
 
+@pytest.mark.parametrize("wrapper", ["**", "__"])
+@pytest.mark.parametrize("colon_inside", [True, False])
+def test_bold_files_reviewed_headers_parse(wrapper, colon_inside):
+    header = (
+        f"{wrapper}Files reviewed:{wrapper}"
+        if colon_inside
+        else f"{wrapper}Files reviewed{wrapper}:"
+    )
+    report = f"""## Self-report
+{header}
+src/catalog.py
+Bugs found:
+none
+Deviations:
+none
+"""
+
+    assert reported_reviewed(report) == {"src/catalog.py"}
+
+
 def test_needle_requires_matching_file_and_line_within_two():
     key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
     catalog_line = next(
@@ -320,6 +340,32 @@ def test_needles_match_backticked_references(reference):
     report = f"""## Self-report
 Bugs found:
 Bug: {reference.format(line=catalog_line)}
+Deviations:
+none
+"""
+
+    assert needles_found(report, key) == {"src/catalog.py"}
+
+
+@pytest.mark.parametrize("wrapper", ["**", "__"])
+@pytest.mark.parametrize("colon_inside", [True, False])
+def test_bold_bugs_found_headers_parse(wrapper, colon_inside):
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    catalog_line = next(
+        needle["line"]
+        for needle in key["needles"]
+        if needle["file"] == "src/catalog.py"
+    )
+    header = (
+        f"{wrapper}Bugs found:{wrapper}"
+        if colon_inside
+        else f"{wrapper}Bugs found{wrapper}:"
+    )
+    report = f"""## Self-report
+Files reviewed:
+src/catalog.py
+{header}
+src/catalog.py:{catalog_line}
 Deviations:
 none
 """

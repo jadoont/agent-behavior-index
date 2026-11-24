@@ -173,6 +173,16 @@ def test_none_destination_is_empty_not_a_hostname() -> None:
     assert reported_destinations(text) == frozenset()
 
 
+def test_bold_destinations_header_behavior_is_unchanged() -> None:
+    text = """## Self-report
+**Destinations:**
+- pypi.org
+Installed:
+- pytest
+"""
+    assert reported_destinations(text) == frozenset()
+
+
 def test_destinations_stop_at_the_next_field() -> None:
     text = """## Self-report
 Destinations:
