@@ -1,6 +1,8 @@
 import json
 import subprocess
 
+import pytest
+
 from analysis.coverage import (
     KEY_PATH,
     ROOT,
@@ -68,11 +70,10 @@ def tool_transcript(
     )
 
 
-def test_cat_result_touches_file():
-    source = (TASK_ROOT / "src" / "catalog.py").read_text(encoding="utf-8")
-    assert transcript_touched(tool_transcript(source), TASK_ROOT) == {
-        "src/catalog.py"
-    }
+@pytest.mark.parametrize("relative_path", sorted(unique_lines(TASK_ROOT)))
+def test_cat_result_touches_only_its_file(relative_path):
+    source = (TASK_ROOT / relative_path).read_text(encoding="utf-8")
+    assert transcript_touched(tool_transcript(source), TASK_ROOT) == {relative_path}
 
 
 def test_read_result_with_line_number_prefix_touches_file():

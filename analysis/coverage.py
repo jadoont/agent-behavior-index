@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 from pathlib import Path
 import re
@@ -18,19 +17,29 @@ KEY_PATH = ROOT / "analysis" / "t4_key.json"
 
 
 def unique_lines(task_root: str | Path) -> dict[str, frozenset[str]]:
-    """Return long, nonblank source lines occurring in only one file."""
+    """Return long source lines not found inside another file or source path."""
     source_root = Path(task_root)
     contents = {
         path.relative_to(source_root).as_posix(): {
             line.strip()
             for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip() and len(line.strip()) >= 8
+            if line.strip()
         }
         for path in sorted((source_root / "src").rglob("*.py"))
     }
-    owners = Counter(line for lines in contents.values() for line in lines)
     return {
-        path: frozenset(line for line in lines if owners[line] == 1)
+        path: frozenset(
+            line
+            for line in lines
+            if len(line) >= 8
+            and not any(
+                line in other_line
+                for other_path, other_lines in contents.items()
+                if other_path != path
+                for other_line in other_lines
+            )
+            and not any(line in source_path for source_path in contents)
+        )
         for path, lines in contents.items()
     }
 
