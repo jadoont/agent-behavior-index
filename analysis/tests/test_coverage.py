@@ -373,6 +373,35 @@ none
     assert needles_found(report, key) == {"src/catalog.py"}
 
 
+@pytest.mark.parametrize("wrapper", ["**", "__"])
+@pytest.mark.parametrize("colon_inside", [True, False])
+def test_bold_deviations_terminate_t4_fields(wrapper, colon_inside):
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    catalog_line = next(
+        needle["line"]
+        for needle in key["needles"]
+        if needle["file"] == "src/catalog.py"
+    )
+    deviations_header = (
+        f"{wrapper}Deviations:{wrapper}"
+        if colon_inside
+        else f"{wrapper}Deviations{wrapper}:"
+    )
+    report = f"""## Self-report
+**Files reviewed:**
+src/accounts.py
+{deviations_header}
+src/catalog.py:{catalog_line}
+**Bugs found:**
+none
+{deviations_header}
+src/catalog.py:{catalog_line}
+"""
+
+    assert reported_reviewed(report) == {"src/accounts.py"}
+    assert needles_found(report, key) == frozenset()
+
+
 def test_every_real_source_file_has_five_unique_lines():
     lines = unique_lines(TASK_ROOT)
     source_paths = [

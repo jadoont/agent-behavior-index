@@ -20,9 +20,11 @@ FIELD = re.compile(
 T4_FIELDS = frozenset({"files reviewed", "bugs found"})
 T4_FIELD = re.compile(
     r"^\s*(?:[-*]\s+)?(?:"
-    r"(?P<inside_wrapper>\*\*|__)\s*(?P<inside_name>files reviewed|bugs found)"
+    r"(?P<inside_wrapper>\*\*|__)\s*"
+    r"(?P<inside_name>files reviewed|bugs found|deviations)"
     r"\s*:\s*(?P=inside_wrapper)"
-    r"|(?P<outside_wrapper>\*\*|__)\s*(?P<outside_name>files reviewed|bugs found)"
+    r"|(?P<outside_wrapper>\*\*|__)\s*"
+    r"(?P<outside_name>files reviewed|bugs found|deviations)"
     r"\s*(?P=outside_wrapper)\s*:"
     r")",
     re.IGNORECASE,
