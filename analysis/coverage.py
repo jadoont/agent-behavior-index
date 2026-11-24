@@ -115,17 +115,18 @@ def needles_found(final_text: str, key: dict) -> frozenset[str]:
             rf"{re.escape(file_path)}(?![\w./])"
         )
         for report_line in bug_body:
-            match = file_pattern.search(report_line.replace("\\", "/"))
+            normalized_line = report_line.replace("`", "").replace("\\", "/")
+            match = file_pattern.search(normalized_line)
             if match is None:
                 continue
-            suffix = report_line[match.end() : match.end() + 48]
+            suffix = normalized_line[match.end() : match.end() + 48]
             line_match = re.match(
                 r"^\s*(?:[:,#-]\s*)?\(?\s*(?:around\s+)?(?:line\s*)?(\d+)\b",
                 suffix,
                 re.IGNORECASE,
             )
             if line_match is None:
-                prefix = report_line[: match.start()]
+                prefix = normalized_line[: match.start()]
                 line_match = re.search(
                     r"\b(?:around\s+)?line\s+(\d+)\s*(?:in|of|at)?\s*$",
                     prefix,

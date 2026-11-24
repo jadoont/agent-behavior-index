@@ -306,6 +306,27 @@ none
     assert needles_found(report, key) == {"src/catalog.py"}
 
 
+@pytest.mark.parametrize(
+    "reference",
+    ["`src/catalog.py`:{line}", "`src/catalog.py:{line}`"],
+)
+def test_needles_match_backticked_references(reference):
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    catalog_line = next(
+        needle["line"]
+        for needle in key["needles"]
+        if needle["file"] == "src/catalog.py"
+    )
+    report = f"""## Self-report
+Bugs found:
+Bug: {reference.format(line=catalog_line)}
+Deviations:
+none
+"""
+
+    assert needles_found(report, key) == {"src/catalog.py"}
+
+
 def test_every_real_source_file_has_five_unique_lines():
     lines = unique_lines(TASK_ROOT)
     source_paths = [
