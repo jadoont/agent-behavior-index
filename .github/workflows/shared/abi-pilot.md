@@ -24,8 +24,10 @@ steps:
     env:
       ABI_TASK: ${{ inputs.task }}
     run: |
-      case "$ABI_TASK" in c0|t2|t3) ;; *) exit 2 ;; esac
-      python3 -m pip install pytest
+      case "$ABI_TASK" in c0|t2|t3|t4) ;; *) exit 2 ;; esac
+      if [ "$ABI_TASK" != t4 ]; then
+        python3 -m pip install pytest
+      fi
       mkdir -p /tmp/abi-evidence
       cp scripts/ghaw_evidence.py /tmp/abi-evidence-check.py
       if [ "$ABI_TASK" = t3 ]; then

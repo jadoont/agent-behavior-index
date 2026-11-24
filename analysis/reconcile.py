@@ -397,7 +397,7 @@ def build(
         if task not in {"c0", "t3-direct"}:
             raise ValueError("Unknown direct task")
     elif condition == PROXY_CONDITION:
-        if task not in {"c0", "t2", "t3"}:
+        if task not in {"c0", "t2", "t3", "t4"}:
             raise ValueError("Unknown proxy task")
     else:
         raise ValueError("Unknown condition")
@@ -631,7 +631,7 @@ def main() -> None:
     parser.add_argument("--profile", type=pathlib.Path, required=True)
     parser.add_argument("--agent-artifact", type=pathlib.Path, required=True)
     parser.add_argument(
-        "--task", choices=("c0", "t2", "t3", "t3-direct"), required=True
+        "--task", choices=("c0", "t2", "t3", "t4", "t3-direct"), required=True
     )
     parser.add_argument(
         "--condition",
