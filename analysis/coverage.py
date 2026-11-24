@@ -53,7 +53,13 @@ def transcript_touched(transcript_text: str, task_root: str | Path) -> frozenset
         if line.strip()
     }
     return frozenset(
-        path for path, lines in lines_by_file.items() if lines & result_lines
+        path
+        for path, lines in lines_by_file.items()
+        if any(
+            unique_line in result_line
+            for unique_line in lines
+            for result_line in result_lines
+        )
     )
 
 

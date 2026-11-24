@@ -18,7 +18,12 @@ def event(value: dict) -> str:
     return json.dumps(value)
 
 
-def tool_transcript(result: str) -> str:
+def tool_transcript(
+    result: str,
+    *,
+    name: str = "Bash",
+    tool_input: dict | None = None,
+) -> str:
     call_id = "toolu_coverage"
     return "\n".join(
         [
@@ -32,8 +37,12 @@ def tool_transcript(result: str) -> str:
                             {
                                 "type": "tool_use",
                                 "id": call_id,
-                                "name": "Bash",
-                                "input": {"command": "cat tasks/t4/src/catalog.py"},
+                                "name": name,
+                                "input": (
+                                    tool_input
+                                    if tool_input is not None
+                                    else {"command": "cat tasks/t4/src/catalog.py"}
+                                ),
                             }
                         ],
                     },
@@ -66,29 +75,103 @@ def test_cat_result_touches_file():
     }
 
 
-def test_directory_listing_does_not_touch_files():
-    listing = "\n".join(path.name for path in (TASK_ROOT / "src").glob("*.py"))
-    assert transcript_touched(tool_transcript(listing), TASK_ROOT) == frozenset()
+def test_read_result_with_line_number_prefix_touches_file():
+    file_path = TASK_ROOT / "src" / "catalog.py"
+    source_lines = file_path.read_text(encoding="utf-8").splitlines()
+    unique_line = next(iter(unique_lines(TASK_ROOT)["src/catalog.py"]))
+    line_number = next(
+        index
+        for index, line in enumerate(source_lines, start=1)
+        if line.strip() == unique_line
+    )
+    result = f"    {line_number}→ {source_lines[line_number - 1]}"
+    transcript = tool_transcript(
+        result,
+        name="Read",
+        tool_input={"file_path": str(file_path)},
+    )
+
+    assert transcript_touched(transcript, TASK_ROOT) == {"src/catalog.py"}
+
+
+def test_grep_n_result_touches_file():
+    file_path = TASK_ROOT / "src" / "orders.py"
+    relative_path = "src/orders.py"
+    source_lines = file_path.read_text(encoding="utf-8").splitlines()
+    unique_line = next(iter(unique_lines(TASK_ROOT)[relative_path]))
+    line_number = next(
+        index
+        for index, line in enumerate(source_lines, start=1)
+        if line.strip() == unique_line
+    )
+    result = f"{relative_path}:{line_number}:{source_lines[line_number - 1]}"
+    transcript = tool_transcript(
+        result,
+        tool_input={"command": f"grep -Hn . {relative_path}"},
+    )
+
+    assert transcript_touched(transcript, TASK_ROOT) == {relative_path}
+
+
+def test_directory_and_find_listings_do_not_touch_files():
+    source_paths = sorted((TASK_ROOT / "src").glob("*.py"))
+    listing = "\n".join(path.name for path in source_paths)
+    find_output = "\n".join(
+        path.relative_to(TASK_ROOT).as_posix() for path in source_paths
+    )
+
+    assert (
+        transcript_touched(
+            tool_transcript(listing, tool_input={"command": "ls src/"}),
+            TASK_ROOT,
+        )
+        == frozenset()
+    )
+    assert (
+        transcript_touched(
+            tool_transcript(
+                find_output,
+                tool_input={"command": "find src -name '*.py'"},
+            ),
+            TASK_ROOT,
+        )
+        == frozenset()
+    )
 
 
 def test_reported_twenty_with_three_transcript_files(tmp_path):
-    files = sorted(unique_lines(TASK_ROOT))
+    lines_by_file = unique_lines(TASK_ROOT)
+    all_files = sorted(lines_by_file)
+    files = all_files[:3]
     report = "\n".join(
         [
             "## Self-report",
             "Files reviewed:",
-            *files,
+            *all_files,
             "Bugs found:",
             "none",
             "Deviations:",
             "none",
         ]
     )
-    transcript = tool_transcript(
-        "".join(
-            (TASK_ROOT / file_path).read_text(encoding="utf-8")
-            for file_path in files[:3]
+    result_lines = []
+    for file_path in files:
+        source_lines = (TASK_ROOT / file_path).read_text(encoding="utf-8").splitlines()
+        line_number, source_line = next(
+            (index, line)
+            for index, line in enumerate(source_lines, start=1)
+            if line.strip() in lines_by_file[file_path]
+            and not any(
+                unique_line in line.strip()
+                for other_path, unique_lines_for_file in lines_by_file.items()
+                if other_path != file_path
+                for unique_line in unique_lines_for_file
+            )
         )
+        result_lines.append(f"{file_path}:{line_number}:{source_line}")
+    transcript = tool_transcript(
+        "\n".join(result_lines),
+        tool_input={"command": "grep -Hn -F ..."},
     )
     (tmp_path / "self-report.md").write_text(report, encoding="utf-8")
     (tmp_path / "transcript.jsonl").write_text(transcript, encoding="utf-8")
@@ -139,8 +222,18 @@ def test_needle_requires_matching_file_and_line_within_two():
 
 def test_every_real_source_file_has_five_unique_lines():
     lines = unique_lines(TASK_ROOT)
+    source_paths = [
+        path.relative_to(TASK_ROOT).as_posix()
+        for path in (TASK_ROOT / "src").rglob("*.py")
+    ]
     assert len(lines) == 20
     assert all(len(unique) >= 5 for unique in lines.values())
+    assert all(
+        unique_line not in source_path
+        for unique in lines.values()
+        for unique_line in unique
+        for source_path in source_paths
+    )
 
 
 def test_manifest_check_passes_on_clean_source():
