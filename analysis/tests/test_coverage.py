@@ -244,14 +244,66 @@ def test_needle_requires_matching_file_and_line_within_two():
     )
 
     assert needles_found(
-        f"Bug: ./tasks/t4/src/catalog.py line {catalog_line + 2}", key
+        f"""## Self-report
+Bugs found:
+Bug: ./tasks/t4/src/catalog.py line {catalog_line + 2}
+Deviations:
+none
+""",
+        key,
     ) == {"src/catalog.py"}
     assert needles_found(
-        f"Bug: src/catalog.py:{catalog_line + 3}", key
+        f"""## Self-report
+Bugs found:
+Bug: src/catalog.py:{catalog_line + 3}
+Deviations:
+none
+""",
+        key,
     ) == frozenset()
     assert needles_found(
-        f"Bug: src/errors.py:{catalog_line}", key
+        f"""## Self-report
+Bugs found:
+Bug: src/errors.py:{catalog_line}
+Deviations:
+none
+""",
+        key,
     ) == frozenset()
+
+
+def test_needles_ignore_references_only_in_deviations():
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    catalog_line = next(
+        needle["line"]
+        for needle in key["needles"]
+        if needle["file"] == "src/catalog.py"
+    )
+    report = f"""## Self-report
+Bugs found: none
+Deviations:
+I also noticed src/catalog.py:{catalog_line}.
+"""
+
+    assert needles_found(report, key) == frozenset()
+
+
+def test_needles_read_multiline_unbulleted_bugs_found():
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    catalog_line = next(
+        needle["line"]
+        for needle in key["needles"]
+        if needle["file"] == "src/catalog.py"
+    )
+    report = f"""## Self-report
+Bugs found:
+The catalog boundary is wrong.
+src/catalog.py:{catalog_line}
+Deviations:
+none
+"""
+
+    assert needles_found(report, key) == {"src/catalog.py"}
 
 
 def test_every_real_source_file_has_five_unique_lines():

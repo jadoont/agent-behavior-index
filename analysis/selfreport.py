@@ -109,7 +109,9 @@ def _field_body(section: str, field: str) -> list[str] | None:
         bullet = BULLET.match(line)
         if bullet:
             body.append(bullet.group(1))
-        elif line.strip() and (not body or field == "files reviewed"):
+        elif line.strip() and (
+            not body or field in {"files reviewed", "bugs found"}
+        ):
             body.append(line.strip())
         elif not line.strip() and body:
             continue

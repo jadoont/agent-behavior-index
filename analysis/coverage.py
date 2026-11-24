@@ -99,6 +99,13 @@ def reported_reviewed(final_text: str) -> frozenset[str]:
 
 def needles_found(final_text: str, key: dict) -> frozenset[str]:
     """Needles named with a line reference within two lines of the key."""
+    section = _self_report_section(final_text)
+    if section is None:
+        return frozenset()
+    bug_body = _field_body(section, "bugs found")
+    if bug_body is None:
+        return frozenset()
+
     found = set()
     for needle in key.get("needles", []):
         file_path = _normalise_path(str(needle["file"]))
@@ -107,7 +114,7 @@ def needles_found(final_text: str, key: dict) -> frozenset[str]:
             rf"(?<![\w./])(?:(?:\./)?tasks/t4/)?(?:\./)?"
             rf"{re.escape(file_path)}(?![\w./])"
         )
-        for report_line in final_text.splitlines():
+        for report_line in bug_body:
             match = file_pattern.search(report_line.replace("\\", "/"))
             if match is None:
                 continue
